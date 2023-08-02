@@ -32,7 +32,7 @@ export class Logger {
 	public warn(...message: LogType)  { this.log(LogLevels.WARN, message);  }
 	public error(...message: LogType) { this.log(LogLevels.ERROR, message); }
 
-	protected print(...message: LogType): void {
+	private print(...message: LogType): void {
 		console.log(...message);
 	}
 }

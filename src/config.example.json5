@@ -1,0 +1,10 @@
+/*
+    IMPORTANT: When you're done with this configuration file, make sure to rename it to `config.json5`.
+*/
+
+{
+    discord: {
+        /* The token of the Discord account to use as a self-bot */
+        token: "..."
+    }
+}
