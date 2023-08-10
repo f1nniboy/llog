@@ -1,21 +1,27 @@
 import { Client } from "discord.js-selfbot-v13";
 import { basename } from "path";
+import chalk from "chalk";
 
+import { AIManager } from "./ai/manager.js";
 import { Event } from "./events/index.js";
 import { Logger } from "./util/logger.js";
 import { Utils } from "./util/utils.js";
+import { API } from "./api/manager.js";
 import { Config } from "./config.js";
-import chalk from "chalk";
 
 export class App {
     public readonly client: Client<true>;
 
     public readonly config: Config;
     public readonly logger: Logger;
+    public readonly ai: AIManager;
+    public readonly api: API;
 
     constructor() {
         this.config = new Config(this);
+        this.ai = new AIManager(this);
         this.logger = new Logger();
+        this.api = new API(this);
 
         this.client = new Client({
             ws: {
@@ -32,7 +38,7 @@ export class App {
         await this.config.load();
 
         /* Register various Discord events. */
-        Utils.search("./build/events")
+        await Utils.search("./build/events")
             .then(files => files.forEach(path => {
                 /* Name of the event */
                 const name: string = basename(path).split(".")[0];
@@ -49,10 +55,13 @@ export class App {
                             }
                         });
                     })
-                    .catch(error => this.logger.warn("Failed to run event", chalk.bold(name), "->", error));
+                    .catch(error => this.logger.warn("Failed to load event", chalk.bold(name), "->", error));
             }));
 
         /* Connect the Discord client. */
         await this.client.login(this.config.data.discord.token);
+
+        /* Load the various plugins & set up the AI manager. */
+        await this.ai.load();
     }
 }

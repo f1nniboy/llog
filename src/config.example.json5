@@ -6,5 +6,10 @@
     discord: {
         /* The token of the Discord account to use as a self-bot */
         token: "..."
+    },
+
+    api: {
+        /* The OpenAI API key */
+        key: "..."
     }
 }

@@ -8,7 +8,7 @@ export default class ReadyEvent extends Event<"messageCreate"> {
         super(app);
     }
 
-    public run(message: Message): void {
-        /* TODO: ... */
+    public async run(message: Message): Promise<void> {
+        this.app.ai.add(message);
     }
 }

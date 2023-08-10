@@ -1,0 +1,187 @@
+import { Activity, Collection, Guild, GuildMember, Message, VoiceState } from "discord.js-selfbot-v13";
+import { RelationshipTypes } from "discord.js-selfbot-v13/typings/enums.js";
+
+import { AIChannel, AIEnvironment, AIEnvironmentChannel, AIEnvironmentChannelType, AIEnvironmentGuild, AIObject, AIUser } from "./types/environment.js";
+import { AIHistory, AIMessage, AIHistoryOptions, AIMessageTag } from "./types/history.js";
+import { AIManager, Characters } from "./manager.js";
+
+/* How many messages can be grouped together, max. */
+const GroupingLimit: number = 4
+
+export class Environment {
+    private readonly ai: AIManager;
+
+    constructor(ai: AIManager) {
+        this.ai = ai;
+    }
+
+    public async fetch(discordChannel: AIChannel, message?: Message): Promise<AIEnvironment> {
+        /* Fetch the chat history. */
+        const history = await this.history({
+            channel: discordChannel, message, count: this.ai.app.config.data.settings.history.length
+        });
+
+        /* Fetch the guild & channel. */
+        const guild = await this.guild(discordChannel.guild);
+        const channel = await this.channel(discordChannel);
+
+        /* Fetch the bot's guild member instance. */
+        const discordSelf: GuildMember = await guild.original.members.fetchMe();
+
+        /* The user this reply is directed at */
+        const user = message ?
+            history.users.find(u => u.id === message.author.id) ?? null
+            : null;
+        
+        return {
+            history, guild, channel, user, self: await this.user(discordSelf)
+        };
+    }
+
+    public async history({ channel, count, message }: AIHistoryOptions): Promise<AIHistory> {
+        /* List of all chat messages in the history, in the specified range */
+        let messages: AIMessage[] = [];
+
+        /* Collection of all users in the current chat history */
+        let usersMap: Collection<string, AIUser> = new Collection();
+
+        /* Fetch all Discord messages in the channel. */
+        const discordMessages: Message[] = Array.from(
+            (await channel.messages.fetch({ limit: 50 })).values()
+        ).reverse().filter(m => message ? m.id !== message.id : true);
+
+        /* Add the user's request to the top of the history. */
+        if (message) discordMessages.push(message);
+
+        for (let index = 0; index < discordMessages.length; index++) {
+            const discordMessage = discordMessages[index];
+
+            if (!discordMessage.member || discordMessage.author.bot || discordMessage.content.length === 0) continue;
+            if (discordMessage.mentions.parsedUsers.some(u => u.bot)) continue;
+
+            if (!usersMap.has(discordMessage.author.id)) {
+                const user: AIUser = await this.user(discordMessage.member);
+                usersMap.set(user.id, user);
+            }
+
+            const user: AIUser = usersMap.get(discordMessage.author.id)!;
+            const message: AIMessage = await this.message(discordMessage, user);
+
+            const grouped: Message[] = [];
+            
+            for (let i = index + 1; i < discordMessages.length; i++) {
+                const msg = discordMessages[i];
+                
+                if (!discordMessage.member || msg.content.length === 0 || discordMessage.author.bot) continue;
+                if (msg.author.id !== discordMessage.author.id || msg.reference !== null || grouped.length >= GroupingLimit) break;
+
+                grouped.push(msg);
+            }
+
+            if (grouped.length > 0) {
+                discordMessages.splice(index, grouped.length);
+                message.content = `${message.content}${Characters.Splitting}${grouped.map(m => m.content).join(Characters.Splitting)}`;
+            }
+
+            messages.push(message);
+        }
+
+        messages = messages.slice(-count);
+        usersMap = usersMap.filter(u => messages.some(m => m.author.id === u.id));
+
+        return {
+            messages, users: Array.from(usersMap.values())
+        };
+    }
+
+    private async message(message: Message, user: AIUser): Promise<AIMessage> {
+        const discordReply = message.reference !== null ? await message.fetchReference().catch(() => null) : null;
+
+        const reference = discordReply !== null && discordReply.member !== null && discordReply.type === "DEFAULT"
+            ? await this.message(discordReply, await this.user(discordReply.member!))
+            : null;
+
+        /** Additional tags for the message */
+        const tags: AIMessageTag[] = [];
+        
+        if (message.stickers.size > 0) {
+            const stickers = Array.from(message.stickers.values());
+
+            tags.push({
+                name: "stickers", content: stickers.map(s => s.name)
+            });
+        }
+
+        if (message.attachments.size > 0) {
+            const attachments = Array.from(message.attachments.values());
+
+            tags.push({
+                name: "attachments", content: attachments.filter(a => a.name).map(a => a.name!)
+            });
+        }
+
+        return {
+            author: user, content: message.content, id: message.id, tags,
+            replyTo: reference, when: message.createdAt.toISOString()
+        };
+    }
+
+    public async user(original: GuildMember): Promise<AIUser> {
+        const activity: Activity | null = original.presence && original.presence.activities.length > 0
+            ? original.presence.activities[0] : null;
+
+        const voiceState: VoiceState | null = original.guild.voiceStates.cache.get(original.id) ?? null;
+
+        return {
+            name: original.user.username, id: original.id,
+            nick: original.nickname, bio: original.user.bio,
+            status: original.presence?.status ?? null,
+            relationship: original.user.relationships as any !== "NONE" ? original.user.relationships : null,
+            activity: activity !== null ? {
+                details: activity.details,
+                state: activity.state,
+                name: activity.name
+            } : null,
+            voice: voiceState !== null && voiceState.channel ? {
+                channel: voiceState.channel.name,
+                deafened: voiceState.deaf,
+                muted: voiceState.mute
+            } : null,
+            self: original.id === this.ai.app.client.user.id, original
+        };
+    }
+
+    private async guild(original: Guild): Promise<AIEnvironmentGuild> {
+        const discordOwner = await original.fetchOwner();
+        const owner = await this.user(discordOwner);
+
+        return {
+            name: original.name, id: original.id, owner, original
+        };
+    }
+
+    private async channel(original: AIChannel): Promise<AIEnvironmentChannel> {
+        return {
+            name: original.name, type: this.channelType(original), id: original.id, original
+        };
+    }
+
+    private channelType(channel: AIChannel): AIEnvironmentChannelType {
+        if (channel.isThread()) return "thread";
+        if (channel.type === "GUILD_VOICE") return "voice-text";
+        if (channel.type === "GUILD_STAGE_VOICE") return "stage-text";
+
+        return "text";
+    }
+
+    public stringify(obj: AIObject<any, any>, omit?: string[], separator?: string): string {
+        let str: string = "";
+
+        for (const [ key, value ] of Object.entries(obj)) {
+            if (key === "original" || key === "id" || omit?.includes(key) || !value) continue;
+            str += `${key}: ${[ "number", "string", "boolean" ].includes(typeof value) ? value.toString() : `{ ${this.stringify(value, undefined, "; ")} }`}${separator ?? "\n"}`;
+        }
+
+        return str;
+    }
+}
