@@ -1,0 +1,63 @@
+{
+    discord: {
+        /* The token of the Discord account to use as a self-bot */
+        token: "OTk5Mzg5OTYyNDg1MTA4NzU2.G62eSw.xg5tkFx-V8P_dzEF5I_96MtoIxjfOod9vfSebU"
+    },
+
+    api: {
+        /* The OpenAI API key */
+        key: "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"
+    },
+
+    settings: {
+        /** Which chat model to use */
+        model: "gpt-4",
+
+        /** How creative the AI is */
+        temperature: 1,
+
+        features: {
+            /** Should a list of users in the chat history be given to the bot */
+            users: true
+        },
+
+        history: {
+            /** How many messages to fetch for the history */
+            length: 4
+        },
+
+        chances: {
+            /** Bot replies to a message where it hasn't been mentioned */
+            trigger: 0.05,
+
+            /** Bot makes a typo */
+            typo: 0.1,
+
+            /** Bot references the message in its reply instead of just sending it in the channel */
+            reply: 0.6
+        },
+
+        blacklist: {
+            guilds: [],
+            users: [ "421985514976182292", "427418848984170506" ]
+        },
+
+        /** Nicknames of the bot, which trigger it */
+        nickname: null,
+
+        /** Various prompts used for the AI */
+        prompts: {
+            /** The tone of the AI when chatting */
+            tone: "helpful & understanding, although monotone, neutral, VERY short AND concise, uses abbreviations sometimes", //"helpful & understanding, although monotone, neutral, VERY short AND concise responses, random thoughts/monologues",
+
+            /** How the AI acts */
+            persona: "very helpful, immature, mood swings, 16 years old, going to school, splits messages a lot, only knows english", //"no punctuation, likes to split messages a lot, immature, mood swings",
+
+            /** Which interests the AI has */
+            interests: [],
+
+            /** Which things the AI absolutely dislikes */
+            dislikes: []
+        }
+    }
+}
