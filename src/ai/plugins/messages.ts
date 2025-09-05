@@ -13,8 +13,8 @@ type PluginOutput = string
 export default class GetChannelMessagesPlugin extends Plugin<PluginInput, PluginOutput> {
     constructor(ai: AIManager) {
         super(ai, {
-            name: "messages",
-            description: "Fetch the last X messages from a channel, to view them",
+            name: "getMessages",
+            description: "Fetch the last X messages from a channel, to view them (don't need to use for current available chat history)",
             triggers: [ /(fetch|read|get)\s+.*?\s+messages\s+.*?/g ],
             parameters: {
                 name: { type: "string", description: "Name of the channel", required: true },

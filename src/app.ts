@@ -28,8 +28,7 @@ export class App {
                 properties: { browser: "Discord iOS" }
             },
 
-            presence: { status: "online" },
-            checkUpdate: false
+            presence: { status: "online" }
         });
     }
 

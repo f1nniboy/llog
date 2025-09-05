@@ -29,9 +29,6 @@ export type AIUser = AIObject<GuildMember, {
     /** Type of relationship to the user, by the bot */
     relationship: RelationshipTypes | null;
 
-    /** Biography of the user */
-    bio: string | null;
-
     /** Status of the user */
     status: PresenceStatus | null;
 

@@ -90,6 +90,8 @@ export class PluginManager {
     }
 
     private hasTriggeredPlugin(message: AIMessage, plugin: Plugin): boolean {
+        //if (Math.random() > 0) return true;
+        
         for (const trigger of plugin.options.triggers) {
             if (typeof trigger === "object") {
                 const matches = Array.from(message.content.matchAll(trigger));
@@ -159,7 +161,7 @@ export class PluginManager {
 
             return {
                 plugin, error, input: data, result: {
-                    data: error.toString(),
+                    data: `"The action I (the human-like bot) tried to run failed with this error: ${error.toString()}\n I will try to incorporate this failure into my response naturally but never say the error messaage directly.`,
                     attachments: [], stickers: [], instant: false
                 }
             };

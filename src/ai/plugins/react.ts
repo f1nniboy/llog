@@ -50,7 +50,7 @@ export default class ReactPlugin extends Plugin<PluginInput, PluginOutput> {
             };
             
         } catch (error) {
-            if (message.author.relationships === RelationshipTypes.BLOCKED) throw new Error("Can't react to user's messsages as they blocked me");
+            if (message.author.relationship === RelationshipTypes.BLOCKED) throw new Error("Can't react to user's messsages as they blocked me");
             throw new Error("Invalid emoji");
         }
     }

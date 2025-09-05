@@ -47,7 +47,8 @@ export class Environment {
 
         /* Fetch all Discord messages in the channel. */
         const discordMessages: Message[] = Array.from(
-            (await channel.messages.fetch({ limit: 50 })).values()
+            (await channel.messages.fetch({ limit: 50 }) as any as Collection<bigint, Message>)
+                .values()
         ).reverse().filter(m => message ? m.id !== message.id : true);
 
         /* Add the user's request to the top of the history. */
@@ -134,16 +135,16 @@ export class Environment {
 
         return {
             name: original.user.username, id: original.id,
-            nick: original.nickname, bio: original.user.bio,
+            nick: original.nickname,
             status: original.presence?.status ?? null,
-            relationship: original.user.relationships as any !== "NONE" ? original.user.relationships : null,
+            relationship: original.user.relationship as any !== "NONE" ? original.user.relationship : null,
             activity: activity !== null ? {
                 details: activity.details,
                 state: activity.state,
                 name: activity.name
             } : null,
             voice: voiceState !== null && voiceState.channel ? {
-                channel: voiceState.channel.name,
+                channel: "test name", // TODO: voiceState.channel.name,
                 deafened: voiceState.deaf,
                 muted: voiceState.mute
             } : null,

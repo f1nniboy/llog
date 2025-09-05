@@ -19,7 +19,7 @@ export default class RelationshipsPlugin extends Plugin<PluginInput, PluginOutpu
             description: "Manage friends on Discord",
             triggers: [ "friend", "add", "remove", "block", "fr" ],
             parameters: {
-                action: { type: "string", description: "Which action to perform", enum: [ "add", "remove", "block", "unblock", "list" ], required: true },
+                action: { type: "string", description: "Which action to perform", enum: [ "add", "remove", "unblock", "list" ], required: true },
                 name: { type: "string", description: "Name of the user to add/remove as a friend, ONLY required if action is not 'list'", required: false }
             }
         });
@@ -32,32 +32,26 @@ export default class RelationshipsPlugin extends Plugin<PluginInput, PluginOutpu
         if (action !== "list" && target === null) throw new Error("User doesn't exist");
 
         if (target !== null) {
-            const status: RelationshipType = target.user.relationships as any;
+            const status: RelationshipType = target.user.relationship as any;
 
             if (action === "add") {
-                if (status === "BLOCKED") await target.user.unBlock();
+                if (status === "BLOCKED") await target.user.deleteRelationship();
                 else if (status === "FRIEND") throw new Error("Already friends with the user");
                 else if (status === "PENDING_OUTGOING") throw new Error("Already sent friend request to the the user");
-                else if (status === "PENDING_INCOMING") await target.user.setFriend();
+                else if (status === "PENDING_INCOMING") await target.user.sendFriendRequest();
                 
                 if (status !== "PENDING_INCOMING") await target.user.sendFriendRequest();
                 return { data: `Sent friend request to ${name}` };
     
             } else if (action === "remove") {
                 if (status !== "FRIEND") throw new Error("Not friends with the user");
-                else await target.user.unFriend();
+                else await target.user.deleteRelationship();
     
                 return { data: `Unfriended ${name}` };
     
-            } else if (action === "block") {
-                if (status === "BLOCKED") throw new Error("User is already blocked");
-                else await target.user.setBlock();
-    
-                return { data: `Blocked ${name}` };
-    
             } else if (action === "unblock") {
                 if (status !== "BLOCKED") throw new Error("User is not blocked");
-                else await target.user.unBlock();
+                else await target.user.deleteRelationship();
     
                 return { data: `Unblocked ${name}` };
             }
@@ -80,8 +74,6 @@ export default class RelationshipsPlugin extends Plugin<PluginInput, PluginOutpu
 
                     obj[user.username] = types[value];
                 }
-
-                console.log(obj);
 
                 return { data: obj };
             }

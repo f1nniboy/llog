@@ -14,8 +14,8 @@ type PluginOutput = string
 export default class UpdateUserPlugin extends Plugin<PluginInput, PluginOutput> {
     constructor(ai: AIManager) {
         super(ai, {
-            name: "user",
-            description: "Update a user or yourself on the server, you don't have to specify all params",
+            name: "updateUser",
+            description: "Update a user or yourself on the server (e.g. changing nick or timing out), you don't have to specify all params",
             triggers: [ "nick", "time out", "timeout", "rename", "update", "shut up", "still" ],
             parameters: {
                 name: { type: "string", description: "Which user to modify", required: true },

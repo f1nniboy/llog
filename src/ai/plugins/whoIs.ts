@@ -12,7 +12,7 @@ type PluginOutput = string
 export default class WhoIsPlugin extends Plugin<PluginInput, PluginOutput> {
     constructor(ai: AIManager) {
         super(ai, {
-            name: "who",
+            name: "whoIs",
             description: "Get info about a member of the server, using their user or nick name, USE IF YOU DON'T HAVE DATA ABOUT THE USER",
             triggers: [ "who", "user", "info", "get" ],
             parameters: {
@@ -22,7 +22,7 @@ export default class WhoIsPlugin extends Plugin<PluginInput, PluginOutput> {
     }
 
     public async run({ data: { name }, environment: { guild: { original: guild } } }: PluginRunOptions<PluginInput>): PluginResponse<PluginOutput> {
-        const target: GuildMember | null = guild.members.cache.find(m => m.user.username === name || m.user.nickname === name) ?? null;
+        const target: GuildMember | null = guild.members.cache.find(m => m.user.username === name || m.nickname === name) ?? null;
         if (target === null) throw new Error("User doesn't exist");
 
         const user = await this.ai.env.user(target);

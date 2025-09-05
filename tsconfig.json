@@ -3,7 +3,7 @@
       "lib": [ "ESNext" ],
       "rootDirs": [ "./src" ],
       "outDir": "./build",
-      "module": "esnext",
+      "module": "nodenext",
       "target": "esnext",
       "moduleResolution": "nodenext",
       "strict": true,

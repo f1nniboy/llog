@@ -24,8 +24,9 @@ export default class ChangeStatusPlugin extends Plugin<PluginInput, PluginOutput
     }
 
     public async run({ data: { text, emoji } }: PluginRunOptions<PluginInput>): PluginResponse<PluginOutput> {
-        this.ai.app.client.user.setActivity(new CustomStatus()
-            .setState(text.slice(undefined, 32)).setEmoji(emoji)
+        this.ai.app.client.user.setActivity(
+            new CustomStatus(this.ai.app.client)
+                .setState(text.slice(undefined, 32)).setEmoji(emoji)
         );
 
         return {

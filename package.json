@@ -9,10 +9,6 @@
     "run": "node --no-warnings build/index.js",
     "build": "tsc"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/f1nniboy/llog.git"
-  },
   "keywords": [
     "discord",
     "selfbot",
@@ -20,21 +16,17 @@
   ],
   "author": "f1nniboy",
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/f1nniboy/llog/issues"
-  },
-  "homepage": "https://github.com/f1nniboy/llog#readme",
   "devDependencies": {
-    "@types/node": "^20.4.5",
-    "typescript": "^5.1.6"
+    "@types/node": "^20.19.13",
+    "typescript": "^5.9.2"
   },
   "dependencies": {
-    "@discordjs/voice": "^0.16.0",
-    "chalk": "^5.3.0",
-    "dayjs": "^1.11.9",
-    "discord.js-selfbot-v13": "^2.14.9",
+    "@discordjs/voice": "^0.16.1",
+    "chalk": "^5.6.0",
+    "dayjs": "^1.11.18",
+    "discord.js-selfbot-v13": "^3.7.0",
     "json5": "^2.2.3",
-    "libsodium-wrappers": "^0.7.11",
+    "libsodium-wrappers": "^0.7.15",
     "node-fetch": "^3.3.2"
   }
 }

@@ -79,6 +79,8 @@ export class AIManager {
             !message.guildId || !message.member || message.author.bot || message.author.id === this.app.client.user.id || message.channel.type === "DM" || message.channel.type === "GROUP_DM" || !message.channel.isText()
         ) return;
 
+        if (message.channelId != "1353852377559601333") return;
+
         if (this.app.config.data.settings.blacklist.users.includes(message.author.id)) return;
         if (this.app.config.data.settings.blacklist.guilds.includes(message.guildId)) return;
 
@@ -343,7 +345,6 @@ if wish to ignore the message & not reply, reply with "${Characters.Ignore}" VER
             role: "user", content: history
         });
 
-        console.log(messages)
         return messages;
     }
 
