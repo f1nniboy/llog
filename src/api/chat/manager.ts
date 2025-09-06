@@ -1,8 +1,8 @@
 import fetch, { HeadersInit, Response } from "node-fetch";
 
 import { OpenAIChatBody, OpenAIChatRawResult, OpenAIChatResult } from "./types/chat.js";
-import { APIError, APIErrorData } from "./types/error.js";
-import { App } from "../app.js";
+import { APIError, APIErrorData } from "../../error/api.js";
+import { App } from "../../app.js";
 
 export type APIPath = "chat/completions"
 type APIMethod = "GET" | "POST" | "DELETE"
@@ -22,7 +22,7 @@ export interface APIRawResponse<T = any> {
     error: APIErrorData | null;
 }
 
-export class API {
+export class ChatAPI {
     private readonly app: App;
 
     constructor(app: App) {
@@ -105,12 +105,12 @@ export class API {
     }
 
     public url(path: APIPath): string {
-        return `https://api.openai.com/v1/${path}`;
+        return `${this.app.config.data.settings.api.baseUrl ?? "https://api.openai.com/v1"}/${path}`;
     }
 
     public headers(): HeadersInit {
         return {
-            Authorization: `Bearer ${this.app.config.data.api.key}`,
+            Authorization: `Bearer ${this.app.config.data.keys.openai}`,
             "Content-Type": "application/json"
         };
     }

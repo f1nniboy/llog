@@ -2,11 +2,12 @@ import { Client } from "discord.js-selfbot-v13";
 import { basename } from "path";
 import chalk from "chalk";
 
+import { VectorAPI } from "./api/vector/manager.js";
+import { ChatAPI } from "./api/chat/manager.js";
 import { AIManager } from "./ai/manager.js";
 import { Event } from "./events/index.js";
 import { Logger } from "./util/logger.js";
 import { Utils } from "./util/utils.js";
-import { API } from "./api/manager.js";
 import { Config } from "./config.js";
 
 export class App {
@@ -15,13 +16,21 @@ export class App {
     public readonly config: Config;
     public readonly logger: Logger;
     public readonly ai: AIManager;
-    public readonly api: API;
+
+    public readonly api: {
+        chat: ChatAPI;
+        vector: VectorAPI;
+    };
 
     constructor() {
         this.config = new Config(this);
         this.ai = new AIManager(this);
         this.logger = new Logger();
-        this.api = new API(this);
+
+        this.api = {
+            chat: new ChatAPI(this),
+            vector: new VectorAPI(this)
+        };
 
         this.client = new Client({
             ws: {
@@ -33,13 +42,14 @@ export class App {
     }
 
     public async setup(): Promise<void> {
-        /* Load the configuration JSON. */
-        await this.config.load();
+        try {
+            await this.config.load({ fatal: true });
+        } catch (error) {
+            return process.exit(1);
+        };
 
-        /* Register various Discord events. */
         await Utils.search("./build/events")
             .then(files => files.forEach(path => {
-                /* Name of the event */
                 const name: string = basename(path).split(".")[0];
 
                 import(path)
@@ -57,10 +67,13 @@ export class App {
                     .catch(error => this.logger.warn("Failed to load event", chalk.bold(name), "->", error));
             }));
 
-        /* Connect the Discord client. */
-        await this.client.login(this.config.data.discord.token);
+        if (this.api.vector) await this.api.vector.load();
 
-        /* Load the various plugins & set up the AI manager. */
+        await this.client.login(this.config.data.discord.token);
         await this.ai.load();
+    }
+
+    public get id() {
+        return this.client.user.id;
     }
 }

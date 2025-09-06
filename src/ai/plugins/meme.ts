@@ -24,7 +24,7 @@ type PluginOutput = RedditPost
 export default class MemePlugin extends Plugin<PluginInput, PluginOutput> {
     constructor(ai: AIManager) {
         super(ai, {
-            name: "meme",
+            name: "sendMeme",
             description: "Send a funny meme/shitpost in the channel",
             triggers: [ "meme", "shitpost", "shit post", "joke", "picture", "post", "send" ],
             parameters: {

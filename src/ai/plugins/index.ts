@@ -2,9 +2,9 @@ import { Collection, MessageAttachment, StickerResolvable } from "discord.js-sel
 import { basename } from "path";
 import chalk from "chalk";
 
-import { OpenAIChatFunction, OpenAIChatFunctionCall, OpenAIChatFunctionParameter } from "../../api/types/function.js";
+import { OpenAIChatFunction, OpenAIChatFunctionCall, OpenAIChatFunctionParameter } from "../../api/chat/types/function.js";
 import { AIEnvironment } from "../types/environment.js";
-import { ChatMessage } from "../../api/types/chat.js";
+import { ChatMessage } from "../../api/chat/types/chat.js";
 import { AIMessage } from "../types/history.js";
 import { Utils } from "../../util/utils.js";
 import { AIManager } from "../manager.js";
@@ -90,7 +90,7 @@ export class PluginManager {
     }
 
     private hasTriggeredPlugin(message: AIMessage, plugin: Plugin): boolean {
-        //if (Math.random() > 0) return true;
+        if (Math.random() > 0) return true;
         
         for (const trigger of plugin.options.triggers) {
             if (typeof trigger === "object") {

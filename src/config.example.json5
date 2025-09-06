@@ -1,17 +1,68 @@
-/*
-    IMPORTANT: When you're done with this configuration file, make sure to rename it to `config.json5`.
-*/
-
 {
     discord: {
         /* The token of the Discord account to use as a self-bot */
-        token: "..."
+        token: "...",
     },
 
-    api: {
-        /* The OpenAI API key */
-        key: "..."
-    }
+    keys: {
+        openai: "sk-or-v1-...",
+        pinecone: "pcsk_...",
+    },
 
-    /* TODO: Finish */
+    settings: {
+        api: {
+            /** Base URL of an OpenAI-compatible API */
+            // baseUrl: "https://openrouter.ai/api/v1",
+
+            /** Which chat model to use */
+            model: "gpt-4.1-mini",
+
+            /** How creative the AI is */
+            temperature: 1,
+        },
+
+        features: {
+            /** Should a list of users in the chat history be given to the bot (uses more tokens) */
+            users: true
+        },
+
+        history: {
+            /** How many messages to fetch for the history and give to the AI */
+            length: 7,
+        },
+
+        chances: {
+            /** Bot replies to a message where it hasn't been mentioned */
+            trigger: /0.05,
+
+            /** Bot makes a typo */
+            typo: 0.1,
+
+            /** Bot references the message in its reply instead of just sending it in the channel */
+            reply: 0.6,
+        },
+
+        blacklist: {
+            guilds: [ "1234 ],
+            users: [ "5678" ],
+        },
+
+        /** Nicknames of the bot, which trigger it */
+        // nickname: "llog",
+
+        /** Various prompts used for the AI */
+        prompts: {
+            /** The tone of the AI when chatting */
+            tone: "pretty monotone, neutral, VERY short and concise messages, uses abbreviations sometimes, sort of dry texter, doesnt type too much",
+
+            /** How the AI acts */
+            persona: "nice to people, immature sometimes, mood swings, 18 years old, going to school, only speaks english, doesnt want to share many private details, can get slightly angry pretty quick but can also be nice, can understand jokes and irony",
+
+            /** Which interests the AI has */
+            interests: [ "linux" ],
+
+            /** Which things the AI absolutely dislikes */
+            dislikes: [],
+        }
+    }
 }

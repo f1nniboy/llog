@@ -83,6 +83,6 @@ export interface AIEnvironment {
     /** The current user the AI is chatting with, if applicable */
     user: AIUser | null;
 
-    /* Current chat history */
+    /** Current chat history */
     history: AIHistory;
 }

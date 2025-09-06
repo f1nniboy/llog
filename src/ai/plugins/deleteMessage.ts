@@ -13,7 +13,7 @@ type PluginOutput = string
 export default class DeleteMessagePlugin extends Plugin<PluginInput, PluginOutput> {
     constructor(ai: AIManager) {
         super(ai, {
-            name: "delete",
+            name: "deleteMsg",
             description: "Delete a message from this channel",
             triggers: [ "delete" ],
             parameters: {
@@ -31,6 +31,6 @@ export default class DeleteMessagePlugin extends Plugin<PluginInput, PluginOutpu
         const message: Message | null = channel.messages.cache.get(historyEntry.id) ?? null;
         if (message === null) throw new Error("Message is not in this channel");
 
-        message.delete();
+        await message.delete();
     }
 }

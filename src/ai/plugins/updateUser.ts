@@ -34,10 +34,10 @@ export default class UpdateUserPlugin extends Plugin<PluginInput, PluginOutput> 
             if (target.id === self.id && !self.permissions.has("CHANGE_NICKNAME")) throw new Error("Can't change the nickname of myself");
 
             await target.setNickname(nick.slice(undefined, 31));
-            return { data: `Changed nickname of ${target.id === this.ai.app.client.user.id ? "yourself" : name} to ${nick}` };
+            return { data: `Changed nickname of ${target.id === this.ai.app.id ? "yourself" : name} to ${nick}` };
         }
 
-        if (timeout && target.id !== this.ai.app.client.user.id) {
+        if (timeout && target.id !== this.ai.app.id) {
             if (!self.permissions.has("MODERATE_MEMBERS")) throw new Error("Can't time out users due to missing permissions");
             if (target.permissions.has("MODERATE_MEMBERS")) throw new Error("Can't time out moderators");
 

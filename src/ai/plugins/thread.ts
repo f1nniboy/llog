@@ -13,12 +13,12 @@ type PluginOutput = string
 export default class CreateThreadPlugin extends Plugin<PluginInput, PluginOutput> {
     constructor(ai: AIManager) {
         super(ai, {
-            name: "thread",
+            name: "startThread",
             description: "Create a thread in the channel",
             triggers: [ "thread", "sub channel" ],
             parameters: {
                 name: { type: "string", description: "Name of the thread", required: true },
-                starter: { type: "string", description: "Starter message", required: false }
+                starter: { type: "string", description: "Starter message to send in the new thread", required: false }
             }
         });
     }

@@ -1,9 +1,9 @@
+import { RelationshipTypes } from "discord.js-selfbot-v13/typings/enums.js";
 import { GuildEmoji, Message } from "discord.js-selfbot-v13";
 
 import { Plugin, PluginResponse, PluginRunOptions } from "./index.js";
 import { AIMessage } from "../types/history.js";
 import { AIManager } from "../manager.js";
-import { RelationshipTypes } from "discord.js-selfbot-v13/typings/enums.js";
 
 interface PluginInput {
     id: number;
@@ -15,7 +15,7 @@ type PluginOutput = string
 export default class ReactPlugin extends Plugin<PluginInput, PluginOutput> {
     constructor(ai: AIManager) {
         super(ai, {
-            name: "react",
+            name: "reactToMsg",
             description: "React to a message in this channel with an emoji, either Unicode or <e:...> emoji",
             triggers: [ "react" ],
             parameters: {

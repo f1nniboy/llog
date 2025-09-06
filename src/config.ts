@@ -3,9 +3,11 @@ import { readFile, watch } from "fs/promises";
 import chalk from "chalk";
 import JSON5 from "json5";
 
-import { ChatModel } from "./api/types/chat.js";
+import { ChatModel } from "./api/chat/types/chat.js";
 import { ChanceType } from "./ai/manager.js";
 import { App } from "./app.js";
+import { AIError, AIErrorType } from "./error/base.js";
+import { ConfigError } from "./error/config.js";
 
 interface ConfigJSON {
     discord: {
@@ -13,18 +15,25 @@ interface ConfigJSON {
         token: string;
     }
 
-    api: {
-        /** The OpenAI API key */
-        key: string;
+    keys: {
+        /** OpenAI API key */
+        openai: string;
+
+        /** Pinecone API key, optionally used for persistent memory */
+        pinecone: string;
     }
 
     settings: {
-        /** Which chat model to use */
-        model: ChatModel;
+        api: {
+            /** Base URL of an OpenAI-compatible API */
+            baseUrl?: string;
 
-        /** How creative the AI is */
-        temperature?: number;
-        topP?: number;
+            /** Which chat model to use */
+            model: ChatModel;
+
+            /** How creative the AI is */
+            temperature?: number;
+        };
 
         history: {
             /** How many messages to fetch for the chat history */
@@ -62,6 +71,11 @@ interface ConfigJSON {
     }
 }
 
+interface LoadConfigOptions {
+    reload?: boolean;
+    fatal?: boolean;
+}
+
 export class Config {
     private readonly app: App;
 
@@ -75,14 +89,17 @@ export class Config {
         this.watch();
     }
 
-    public async load(reload: boolean = false): Promise<void> {
+    public async load({ reload, fatal }: LoadConfigOptions = {}): Promise<void> {
         try {
             const raw = (await readFile(this.path)).toString();
             const data: any = JSON5.parse(raw);
 
             /* If no configuration changes were detected when reloading, simply abort. */
             if (reload && this._data && JSON.stringify(this._data) === JSON.stringify(data)) return;
-    
+
+            const error = this.validate(data);
+            if (error) throw error;
+
             this.app.logger.debug(`${reload ? "Reloaded" : "Loaded"} configuration ${chalk.bold(this.path)}.`);
             this._data = data;
 
@@ -94,6 +111,8 @@ export class Config {
             } else {
                 this.app.logger.error("Failed to load configuration", chalk.bold("->"), error);
             }
+
+            if (fatal) throw error;
         }
     }
 
@@ -101,8 +120,13 @@ export class Config {
         const watcher = watch(this.path);
 
         for await (const _ of watcher) {
-            await this.load(true);
+            await this.load({ reload: true });
         }
+    }
+
+    private validate(data: ConfigJSON): ConfigError | undefined {
+        /* ... */
+        return;
     }
 
     public get data(): ConfigJSON {

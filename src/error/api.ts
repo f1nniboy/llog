@@ -1,5 +1,5 @@
-import { AIError, AIErrorType } from "../../error/base.js";
-import { APIPath } from "../manager.js";
+import { AIError, AIErrorType } from "./base.js";
+import { APIPath } from "../api/chat/manager.js";
 
 export type APIErrorType = "server_error"
 

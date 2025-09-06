@@ -34,7 +34,10 @@ export interface AIMessage {
     tags: AIMessageTag[];
 
     /** Which message this one is replying to */
-    replyTo: AIMessage | null;
+    replyTo?: AIMessage;
+
+    /** Whether this message mentioned the bot */
+    mentioned?: boolean;
 }
 
 export interface AIHistory {

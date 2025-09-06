@@ -5,8 +5,11 @@ export enum AIErrorType {
     /** An error occurred with a request to the API */
     API = "API",
 
+    /** An error occurred while loading the configuration */
+    Config = "Config",
+
     /** Any other miscellaneous error occurred */
-    Other = "Other"
+    Other = "Other",
 }
 
 /** Extended data of the error */

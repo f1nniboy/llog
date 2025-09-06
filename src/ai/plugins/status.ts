@@ -13,7 +13,7 @@ type PluginOutput = string
 export default class ChangeStatusPlugin extends Plugin<PluginInput, PluginOutput> {
     constructor(ai: AIManager) {
         super(ai, {
-            name: "status",
+            name: "setStatus",
             description: "Change your status, displayed on your profile. Do not use this to tell what you are doing or to change your presence",
             triggers: [ "status" ],
             parameters: {

@@ -11,8 +11,8 @@ type PluginOutput = string
 export default class PlayGamePlugin extends Plugin<PluginInput, PluginOutput> {
     constructor(ai: AIManager) {
         super(ai, {
-            name: "game",
-            description: "Make it seem like you are playing a game",
+            name: "playGame",
+            description: "Make it seem like you are playing an Android game",
             triggers: [ "play", "game" ],
             parameters: {
                 action: { type: "string", description: "Whether to START or STOP playing a game", enum: [ "START", "STOP" ], required: true },
@@ -27,7 +27,7 @@ export default class PlayGamePlugin extends Plugin<PluginInput, PluginOutput> {
 
             return {
                 data: action === "START" ? `Playing the game ${name} now` : `Stopped playing the game ${name}`,
-                instructions: "When talking about game, use its display name"
+                instructions: "When talking about game, use its display name (Leage of Legends Wild Rift instead of com.riotgames.league.wildrift)"
             };
             
         } catch (_) {

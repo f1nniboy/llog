@@ -1,11 +1,10 @@
 import { Activity, Collection, Guild, GuildMember, Message, VoiceState } from "discord.js-selfbot-v13";
-import { RelationshipTypes } from "discord.js-selfbot-v13/typings/enums.js";
 
 import { AIChannel, AIEnvironment, AIEnvironmentChannel, AIEnvironmentChannelType, AIEnvironmentGuild, AIObject, AIUser } from "./types/environment.js";
 import { AIHistory, AIMessage, AIHistoryOptions, AIMessageTag } from "./types/history.js";
 import { AIManager, Characters } from "./manager.js";
 
-/* How many messages can be grouped together, max. */
+/* How many messages can be grouped together, max */
 const GroupingLimit: number = 4
 
 export class Environment {
@@ -16,16 +15,13 @@ export class Environment {
     }
 
     public async fetch(discordChannel: AIChannel, message?: Message): Promise<AIEnvironment> {
-        /* Fetch the chat history. */
         const history = await this.history({
             channel: discordChannel, message, count: this.ai.app.config.data.settings.history.length
         });
 
-        /* Fetch the guild & channel. */
         const guild = await this.guild(discordChannel.guild);
         const channel = await this.channel(discordChannel);
 
-        /* Fetch the bot's guild member instance. */
         const discordSelf: GuildMember = await guild.original.members.fetchMe();
 
         /* The user this reply is directed at */
@@ -39,13 +35,9 @@ export class Environment {
     }
 
     public async history({ channel, count, message }: AIHistoryOptions): Promise<AIHistory> {
-        /* List of all chat messages in the history, in the specified range */
         let messages: AIMessage[] = [];
-
-        /* Collection of all users in the current chat history */
         let usersMap: Collection<string, AIUser> = new Collection();
 
-        /* Fetch all Discord messages in the channel. */
         const discordMessages: Message[] = Array.from(
             (await channel.messages.fetch({ limit: 50 }) as any as Collection<bigint, Message>)
                 .values()
@@ -100,7 +92,7 @@ export class Environment {
 
         const reference = discordReply !== null && discordReply.member !== null && discordReply.type === "DEFAULT"
             ? await this.message(discordReply, await this.user(discordReply.member!))
-            : null;
+            : undefined;
 
         /** Additional tags for the message */
         const tags: AIMessageTag[] = [];
@@ -121,9 +113,14 @@ export class Environment {
             });
         }
 
+        /** If this message mentioned the bot */
+        const cleanContent = message.content.replaceAll(`<@${this.ai.app.id}>`, "");
+        const hasMentioned = cleanContent != message.content;
+
         return {
-            author: user, content: message.content, id: message.id, tags,
-            replyTo: reference, when: message.createdAt.toISOString()
+            author: user, content: cleanContent, id: message.id, tags,
+            replyTo: reference, when: message.createdAt.toISOString(),
+            mentioned: hasMentioned
         };
     }
 
@@ -148,7 +145,7 @@ export class Environment {
                 deafened: voiceState.deaf,
                 muted: voiceState.mute
             } : null,
-            self: original.id === this.ai.app.client.user.id, original
+            self: original.id === this.ai.app.id, original
         };
     }
 

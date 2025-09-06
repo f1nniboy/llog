@@ -29,7 +29,7 @@ type PluginOutput = string
 export default class StickerPlugin extends Plugin<PluginInput, PluginOutput> {
     constructor(ai: AIManager) {
         super(ai, {
-            name: "sticker",
+            name: "sendSticker",
             description: "Send a sticker in the channel",
             triggers: [ "sticker", "big emoji" ],
             parameters: {
