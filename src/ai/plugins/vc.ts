@@ -7,7 +7,6 @@ import { AIManager } from "../manager.js";
 interface PluginInput {
     action: "join" | "leave" | "stream";
     name?: string;
-    query?: string;
 }
 
 type PluginOutput = string
@@ -21,9 +20,8 @@ export default class VCPlugin extends Plugin<PluginInput, PluginOutput> {
             description: "Join/leave a voice chat, and other actions",
             triggers: [ "voice", "vc", "call" ],
             parameters: {
-                action: { type: "string", description: "Which action to perform", enum: [ "join", "leave", "stream" ], required: true },
+                action: { type: "string", description: "Which action to perform", enum: [ "join", "leave" ], required: true },
                 name: { type: "string", description: "Name of the channel to join/leave, MUST specify when join", required: false },
-                query: { type: "string", description: "What to search for on YouTube & stream, MUST specify when stream", required: false }
             }
         });
 
@@ -54,10 +52,8 @@ export default class VCPlugin extends Plugin<PluginInput, PluginOutput> {
         return this.connections.has(guild.id);
     }
 
-    public async run({ data: { action, name, query }, environment: { guild: { original: guild } } }: PluginRunOptions<PluginInput>): PluginResponse<PluginOutput> {
+    public async run({ data: { action, name }, environment: { guild: { original: guild } } }: PluginRunOptions<PluginInput>): PluginResponse<PluginOutput> {
         if (action === "join" && !name) throw new Error("Joining a voice channel requires a channel name");
-        if (action === "stream" && !query) throw new Error("Streaming requires a search query for YouTube");
-
         const channel: AnyChannel | null = guild.channels.cache.find(c => c.name === name && c.isVoice()) ?? null;
         
         if (channel === null && action === "join") throw new Error("Channel doesn't exist");

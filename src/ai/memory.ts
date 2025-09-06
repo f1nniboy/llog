@@ -1,8 +1,10 @@
 import { VectorRetrieveOptions } from "../api/vector/manager.js";
 import { AIManager, AIResult, Characters } from "./manager.js";
+import { AIEnvironment } from "./types/environment.js";
 import { AIMessage } from "./types/history.js";
 
 interface MemoryInsertOptions {
+    environment: AIEnvironment;
     trigger: AIMessage;
     result: AIResult;
 }
@@ -10,9 +12,12 @@ interface MemoryInsertOptions {
 export interface MemoryEntry {
     id: string;
     authorId: string;
-    authorName: string;
     text: string;
     time: string;
+    pluginName?: string;
+    pluginParams?: string;
+    channelId: string;
+    guildId: string;
 }
 
 export type AIMemory = MemoryEntry[]
@@ -25,32 +30,30 @@ export class MemoryManager {
     }
 
     public async insert(options: MemoryInsertOptions) {
+        const { environment, trigger, result } = options;
+        const p = result.plugins.at(0);
+
         await this.ai.app.api.vector.insert({
-            id: options.trigger.id,
-            time: options.trigger.when,
-            authorId: options.trigger.author.id,
-            authorName: options.trigger.author.name,
+            id: trigger.id,
+            time: trigger.when,
+            authorId: trigger.author.id,
+            pluginName: p ? p.plugin.options.name : undefined,
+            pluginParams: p ? JSON.stringify(p.input) : undefined,
+            channelId: environment.channel.id,
+            guildId: environment.guild.id,
             text: this.formatMemoryEntry(options)
         });
     }
 
     public async retrieve(options: VectorRetrieveOptions): Promise<AIMemory> {
-        const results = await this.ai.app.api.vector.retrieve(options);
-
-        return results.map(r => ({
-            id: r.id,
-            authorId: r.authorId,
-            authorName: r.authorName,
-            text: r.text,
-            time: r.time
-        }));
+        return this.ai.app.api.vector.retrieve(options);
     }
 
     public toMemoryEntry(entry: MemoryEntry) {
-        return `=== INTERACTION with ${entry.authorName}: ===\n${entry.text}\n=== END INTERACTION ===`
+        return `${entry.text}\n\n`;
     }
 
     private formatMemoryEntry({ trigger, result }: MemoryInsertOptions) {
-        return `${this.ai.toHistoryEntry(trigger)}\n${Characters.Self}: ${result.content}`;
+        return `${this.ai.toHistoryEntry(trigger)}\n${this.ai.app.name}${Characters.Separator}${result.content}`;
     }
 }

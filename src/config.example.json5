@@ -12,10 +12,10 @@
     settings: {
         api: {
             /** Base URL of an OpenAI-compatible API */
-            // baseUrl: "https://openrouter.ai/api/v1",
+            baseUrl: "https://openrouter.ai/api/v1",
 
             /** Which chat model to use */
-            model: "gpt-4.1-mini",
+            model: "anthropic/claude-sonnet-4",
 
             /** How creative the AI is */
             temperature: 1,
@@ -23,17 +23,30 @@
 
         features: {
             /** Should a list of users in the chat history be given to the bot (uses more tokens) */
-            users: true
+            users: true,
+
+            /** Should the bot be able to interact with various tools */
+            plugins: true,
+        },
+
+        plugins: {
+            /** Which plugins to fully disable */
+            // blacklist: [ "generateImage" ],
         },
 
         history: {
-            /** How many messages to fetch for the history and give to the AI */
-            length: 7,
+            /** How many messages to fetch for the chat history */
+            length: 10,
+        },
+
+        memory: {
+            /** How many memories to fetch for an interaction */
+            length: 5,
         },
 
         chances: {
             /** Bot replies to a message where it hasn't been mentioned */
-            trigger: /0.05,
+            trigger: 0.05,
 
             /** Bot makes a typo */
             typo: 0.1,

@@ -1,6 +1,3 @@
-/* A string of characters for each row of the keyboard */
-const rows: string[] = [ "qwertyuiop", "asdfghjkl", "zxcvbnm" ]
-
 interface SearchOptions {
     query: string;
     limit?: number;
@@ -25,6 +22,7 @@ interface RawSearchResult {
 }
 
 export async function search({ query, limit }: SearchOptions): Promise<SearchResult[]> {
+    /* TODO: make configurable in config */
     const url = new URL("https://4get.dorfdsl.de/api/v1/web");
     url.searchParams.append("s", query);
 

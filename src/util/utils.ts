@@ -22,4 +22,25 @@ export class Utils {
 
 		return files;
 	}
+
+	public static dataUriToBuffer(uri: string) {
+		return Buffer.from(uri.split(",")[1], "base64");
+	}
+
+	public static formatDate(date: Date) {
+		const dateString = date.toLocaleDateString("en-US", {
+			day: "numeric",
+			month: "long",
+			year: "numeric",
+			timeZone: "UTC"
+		});
+		const hours = String(date.getUTCHours()).padStart(2, '0');
+		const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+		
+		return `${dateString}, ${hours}:${minutes} UTC`;
+	}
+
+	public static randomNumber(min: number, max: number) {
+		return Math.floor(Math.random() * (max - min + 1)) + min;
+	}
 }

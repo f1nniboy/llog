@@ -1,5 +1,3 @@
-import { GuildMember } from "discord.js-selfbot-v13";
-
 import { Plugin, PluginResponse, PluginRunOptions } from "./index.js";
 import { AIManager } from "../manager.js";
 
@@ -22,8 +20,8 @@ export default class WhoIsPlugin extends Plugin<PluginInput, PluginOutput> {
     }
 
     public async run({ data: { name }, environment: { guild: { original: guild } } }: PluginRunOptions<PluginInput>): PluginResponse<PluginOutput> {
-        const target: GuildMember | null = guild.members.cache.find(m => m.user.username === name || m.nickname === name) ?? null;
-        if (target === null) throw new Error("User doesn't exist");
+        const target = guild.members.cache.find(m => m.user.username === name || m.nickname === name);
+        if (!target) throw new Error("User doesn't exist");
 
         const user = await this.ai.env.user(target);
 

@@ -4,6 +4,7 @@ import chalk from "chalk";
 
 import { VectorAPI } from "./api/vector/manager.js";
 import { ChatAPI } from "./api/chat/manager.js";
+import { TaskManager } from "./tasks/index.js";
 import { AIManager } from "./ai/manager.js";
 import { Event } from "./events/index.js";
 import { Logger } from "./util/logger.js";
@@ -16,6 +17,7 @@ export class App {
     public readonly config: Config;
     public readonly logger: Logger;
     public readonly ai: AIManager;
+    public readonly task: TaskManager;
 
     public readonly api: {
         chat: ChatAPI;
@@ -24,6 +26,8 @@ export class App {
 
     constructor() {
         this.config = new Config(this);
+
+        this.task = new TaskManager(this);
         this.ai = new AIManager(this);
         this.logger = new Logger();
 
@@ -70,7 +74,33 @@ export class App {
         if (this.api.vector) await this.api.vector.load();
 
         await this.client.login(this.config.data.discord.token);
+        
+        await this.task.load();
         await this.ai.load();
+
+        /*await this.task.add({
+            time: Date.now() + 1500,
+            type: "ai",
+            context: {
+                channelId: '1413920137869791262',
+                guildId: '880075253416603819',
+                userId: '747682664135524403',
+                instructions: "change your status to mmfg and say something nice"
+            }
+        });*/
+
+        /*await this.task.add({
+            time: Date.now() + 1500,
+            type: "deadChat",
+            context: {
+                channelId: '1413920137869791262',
+                guildId: '880075253416603819'
+            }
+        });*/
+    }
+
+    public get name() {
+        return this.client.user.username;
     }
 
     public get id() {

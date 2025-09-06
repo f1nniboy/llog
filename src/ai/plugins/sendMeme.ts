@@ -47,7 +47,7 @@ export default class MemePlugin extends Plugin<PluginInput, PluginOutput> {
             url: rawPost.url
         };
 
-        /* Fetch the image data. */
+        /* Fetch the image data */
         response = await fetch(post.url);
         const image = Buffer.from(await response.arrayBuffer());
 

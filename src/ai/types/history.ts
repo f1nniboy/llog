@@ -17,6 +17,10 @@ export interface AIMessageTag {
     content: string[] | string;
 }
 
+export interface AIMessageAttachment {
+    url: string;
+}
+
 export interface AIMessage {
     /** ID of the message */
     id: Snowflake;
@@ -27,8 +31,11 @@ export interface AIMessage {
     /** When the message was posted, as an ISO date string */
     when: string;
 
-    /** Content of the message, if applicable */
+    /** Content of the message */
     content: string;
+
+    /** Attachments of the message */
+    attachments: AIMessageAttachment[];
 
     /** Additional tags for the message */
     tags: AIMessageTag[];
@@ -36,7 +43,10 @@ export interface AIMessage {
     /** Which message this one is replying to */
     replyTo?: AIMessage;
 
-    /** Whether this message mentioned the bot */
+    /** Whether the message was sent by the bot */
+    self?: boolean;
+
+    /** Whether the message mentioned the bot */
     mentioned?: boolean;
 }
 

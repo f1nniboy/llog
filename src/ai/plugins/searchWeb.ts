@@ -1,6 +1,6 @@
 import { Plugin, PluginResponse, PluginRunOptions } from "./index.js";
-import { AIManager } from "../manager.js";
 import { search } from "../../util/search.js";
+import { AIManager } from "../manager.js";
 
 interface PluginInput {
     query: string;
@@ -13,7 +13,6 @@ export default class SearchPlugin extends Plugin<PluginInput, PluginOutput> {
         super(ai, {
             name: "searchWeb",
             description: "Search for something on Google in your browser. Use this for searching newly available information or topics you don't know about",
-            triggers: [ "search", "browse", "check" ],
             parameters: {
                 query: { type: "string", description: "What to search for", required: true },
             }

@@ -3,11 +3,9 @@ import { readFile, watch } from "fs/promises";
 import chalk from "chalk";
 import JSON5 from "json5";
 
-import { ChatModel } from "./api/chat/types/chat.js";
+import { ConfigError } from "./error/config.js";
 import { ChanceType } from "./ai/manager.js";
 import { App } from "./app.js";
-import { AIError, AIErrorType } from "./error/base.js";
-import { ConfigError } from "./error/config.js";
 
 interface ConfigJSON {
     discord: {
@@ -29,7 +27,7 @@ interface ConfigJSON {
             baseUrl?: string;
 
             /** Which chat model to use */
-            model: ChatModel;
+            model: string;
 
             /** How creative the AI is */
             temperature?: number;
@@ -40,9 +38,23 @@ interface ConfigJSON {
             length: number;
         };
 
+        memory: {
+            /** How many memories to fetch for an interaction */
+            length: number;
+        };
+
+        plugins: {
+            /** Which plugins to fully disable */
+            blacklist: string[];
+        };
+
         features: {
             /** Should a list of users in the chat history be given to the bot */
             users: boolean;
+
+            /** Should the bot be able to interact with various tools */
+            // TODO: actually toggle
+            plugins: boolean;
         };
 
         /** Chances of various events occuring */
@@ -94,7 +106,7 @@ export class Config {
             const raw = (await readFile(this.path)).toString();
             const data: any = JSON5.parse(raw);
 
-            /* If no configuration changes were detected when reloading, simply abort. */
+            /* If no configuration changes were detected when reloading, simply abort */
             if (reload && this._data && JSON.stringify(this._data) === JSON.stringify(data)) return;
 
             const error = this.validate(data);

@@ -1,20 +1,8 @@
 import { Pinecone } from "@pinecone-database/pinecone";
 import chalk from "chalk";
 
+import { AIMemory, MemoryEntry } from "../../ai/memory.js";
 import { App } from "../../app.js";
-
-export interface VectorInsertOptions {
-    /** ID of the record */
-    id: string;
-
-    /** Value of the record */
-    text: string;
-
-    /** Other metadata */
-    authorId: string;
-    authorName: string;
-    time: string;
-}
 
 export interface VectorRetrieveOptions {
     query: string;
@@ -54,19 +42,22 @@ export class VectorAPI {
         this.app.logger.debug(`Loaded vector database ${chalk.bold(this.indexName)}.`);
     }
 
-    public async insert(data: VectorInsertOptions) {
+    public async insert(data: MemoryEntry) {
         await this.index.upsertRecords([
             {
                 _id: data.id,
                 chunk_text: data.text,
                 authorId: data.authorId,
-                authorName: data.authorName,
+                channelId: data.channelId,
+                guildId: data.guildId,
+                pluginName: data.pluginName as any, 
+                pluginParams: data.pluginParams as any,
                 time: data.time 
             }
         ]);
     };
 
-    public async retrieve(data: VectorRetrieveOptions): Promise<VectorInsertOptions[]> {
+    public async retrieve(data: VectorRetrieveOptions): Promise<AIMemory> {
         const results = await this.index.searchRecords({
             query: {
                 inputs: { text: data.query },
@@ -82,6 +73,10 @@ export class VectorAPI {
                 text: fields.chunk_text,
                 authorId: fields.authorId,
                 authorName: fields.authorName,
+                pluginName: fields.pluginName,
+                pluginParams: fields.pluginParams,
+                channelId: fields.channelId,
+                guildId: fields.guildId,
                 time: fields.time
             };
         });
@@ -92,7 +87,7 @@ export class VectorAPI {
     }
 
     private get indexName() {
-        /** TODO: make configurable in config */
+        /* TODO: make configurable in config */
         return "chatbot-1";
     }
 }

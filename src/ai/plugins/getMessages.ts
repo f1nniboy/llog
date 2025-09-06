@@ -29,7 +29,7 @@ export default class GetChannelMessagesPlugin extends Plugin<PluginInput, Plugin
         if (channel === null) throw new Error("Channel doesn't exist");
         if (!channel.isText()) throw new Error("Channel is not a text channel");
 
-        /* Get the latest X messages in the channel. */
+        /* Get the latest X messages in the channel */
         const history = await this.ai.env.history({
             channel, count: amount ?? 5
         });

@@ -15,18 +15,26 @@ export interface OpenAIChatFunctionParameter {
     required?: string[];
 }
 
-export interface OpenAIChatFunction {
-    name: string;
-    description?: string;
-    parameters: OpenAIChatFunctionParameter;
+export interface OpenAIChatTool {
+    type: "function";
+    function: {
+        name: string;
+        description?: string;
+        parameters: OpenAIChatFunctionParameter;
+    };
 }
 
-export interface OpenAIChatRawFunctionCall {
-    name: string;
-    arguments: string;
+export interface OpenAIChatRawToolCall {
+    id: string;
+    type: "function";
+    function: {
+        name: string;
+        arguments: string;
+    };
 }
 
-export interface OpenAIChatFunctionCall {
+export interface OpenAIChatToolCall {
+    id: string;
     name: string;
     data: object;
 }

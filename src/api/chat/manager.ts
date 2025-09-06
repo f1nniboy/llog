@@ -1,8 +1,10 @@
 import fetch, { HeadersInit, Response } from "node-fetch";
 
-import { OpenAIChatBody, OpenAIChatRawResult, OpenAIChatResult } from "./types/chat.js";
+import { ChatMessage, ChatMessageContent, OpenAIChatBody, OpenAIChatRawResult, OpenAIChatResult, OpenAIImageBody, OpenAIImageResult } from "./types/chat.js";
 import { APIError, APIErrorData } from "../../error/api.js";
 import { App } from "../../app.js";
+import { inspect } from "util";
+import { Utils } from "../../util/utils.js";
 
 export type APIPath = "chat/completions"
 type APIMethod = "GET" | "POST" | "DELETE"
@@ -29,7 +31,30 @@ export class ChatAPI {
         this.app = app;
     }
 
-    public async chat(body: OpenAIChatBody): Promise<OpenAIChatResult> {
+    public static toChatMessage(content: ChatMessage["content"]): ChatMessageContent[] {
+        if (typeof content == "string") {
+            return [ {
+                type: "text",
+                text: content.trim()
+            } ];
+        } else if (Array.isArray(content)) {
+            return content;
+        } else {
+            return [];
+        }
+    }
+
+    public static chatMessageToString(content: ChatMessage["content"]): string | null {
+        if (typeof content == "string") {
+            return content;
+        } else if (Array.isArray(content)) {
+            return content?.[0].text ?? null;
+        } else {
+            return null;
+        }
+    }
+
+    public async completions(body: OpenAIChatBody): Promise<OpenAIChatResult> {
         const data: OpenAIChatRawResult = await this.request<OpenAIChatBody, OpenAIChatRawResult>({
             path: "chat/completions", method: "POST", body: {
                 ...body, stream: false
@@ -38,6 +63,26 @@ export class ChatAPI {
 
         return {
             message: data.choices[0].message,
+            usage: data.usage
+        };
+    }
+
+    public async image({ model, prompt }: OpenAIImageBody): Promise<OpenAIImageResult> {     
+        const data: OpenAIChatRawResult = await this.request<OpenAIChatBody, OpenAIChatRawResult>({
+            path: "chat/completions", method: "POST", body: {
+                model, modalities: [ "image" ], stream: false,
+                messages: [ {
+                    role: "user",
+                    content: `Create the following image and scene: ${prompt}`
+                } ]
+            }
+        });
+
+        const url = data.choices[0].message.images?.at(0)?.image_url.url;
+        if (!url) throw new Error("No image URL was returned");
+
+        return {
+            data: Utils.dataUriToBuffer(url),
             usage: data.usage
         };
     }
@@ -88,7 +133,7 @@ export class ChatAPI {
         });
 
         if (!response.ok && !raw) await this.error(response, path);
-        const data: U & { success?: boolean } = await response.clone().json().catch(() => null) as any;
+        const data: U & { success?: boolean } = await response.json().catch(() => null) as any;
 
         if (raw) {
             const error: APIErrorData | null = await this.error(response, path, "data");

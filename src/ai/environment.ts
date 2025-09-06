@@ -1,8 +1,9 @@
 import { Activity, Collection, Guild, GuildMember, Message, VoiceState } from "discord.js-selfbot-v13";
 
 import { AIChannel, AIEnvironment, AIEnvironmentChannel, AIEnvironmentChannelType, AIEnvironmentGuild, AIObject, AIUser } from "./types/environment.js";
-import { AIHistory, AIMessage, AIHistoryOptions, AIMessageTag } from "./types/history.js";
+import { AIHistory, AIMessage, AIHistoryOptions, AIMessageTag, AIMessageAttachment } from "./types/history.js";
 import { AIManager, Characters } from "./manager.js";
+import chalk from "chalk";
 
 /* How many messages can be grouped together, max */
 const GroupingLimit: number = 4
@@ -12,6 +13,11 @@ export class Environment {
 
     constructor(ai: AIManager) {
         this.ai = ai;
+    }
+
+    public getByPart(env: AIEnvironment, content: string): AIMessage | undefined {
+        /* TODO: fuzzy search in case the AI misquotes */
+        return env.history.messages.findLast(m => m.content.includes(content));
     }
 
     public async fetch(discordChannel: AIChannel, message?: Message): Promise<AIEnvironment> {
@@ -43,13 +49,24 @@ export class Environment {
                 .values()
         ).reverse().filter(m => message ? m.id !== message.id : true);
 
-        /* Add the user's request to the top of the history. */
+        /* Add the user's request to the top of the history */
         if (message) discordMessages.push(message);
 
         for (let index = 0; index < discordMessages.length; index++) {
             const discordMessage = discordMessages[index];
 
-            if (!discordMessage.member || discordMessage.author.bot || discordMessage.content.length === 0) continue;
+            if (discordMessage.author.bot || discordMessage.content.length === 0) continue;
+
+            /* If the message's author is not available as a member, try to fetch it manually */
+            if (!discordMessage.member) {
+                try {
+                    await discordMessage.guild!.members.fetch(discordMessage.author.id);
+                } catch {
+                    this.ai.app.logger.warn(`Failed to fetch member ${chalk.bold(discordMessage.author.username)} on ${chalk.bold(discordMessage.guild?.name)}.`)
+                }
+            }
+
+            if (!discordMessage.member) continue;
             if (discordMessage.mentions.parsedUsers.some(u => u.bot)) continue;
 
             if (!usersMap.has(discordMessage.author.id)) {
@@ -105,22 +122,31 @@ export class Environment {
             });
         }
 
+        const attachments: AIMessageAttachment[] = [];
+
         if (message.attachments.size > 0) {
-            const attachments = Array.from(message.attachments.values());
+            const rawAttachments = Array.from(message.attachments.values());
+
+            for (const a of rawAttachments) {
+                attachments.push(({
+                    url: a.url
+                }));
+            }
 
             tags.push({
-                name: "attachments", content: attachments.filter(a => a.name).map(a => a.name!)
+                name: "attachments", content: rawAttachments.filter(a => a.name).map(a => a.name!)
             });
         }
 
         /** If this message mentioned the bot */
         const cleanContent = message.content.replaceAll(`<@${this.ai.app.id}>`, "");
-        const hasMentioned = cleanContent != message.content;
+        const mentioned = cleanContent != message.content;
 
         return {
             author: user, content: cleanContent, id: message.id, tags,
             replyTo: reference, when: message.createdAt.toISOString(),
-            mentioned: hasMentioned
+            attachments, mentioned,
+            self: user.id == this.ai.app.id
         };
     }
 
@@ -140,8 +166,8 @@ export class Environment {
                 state: activity.state,
                 name: activity.name
             } : null,
-            voice: voiceState !== null && voiceState.channel ? {
-                channel: "test name", // TODO: voiceState.channel.name,
+            voice: voiceState !== null && voiceState.channel && voiceState.channel.isVoice() ? {
+                channel: voiceState.channel.name,
                 deafened: voiceState.deaf,
                 muted: voiceState.mute
             } : null,

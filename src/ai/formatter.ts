@@ -1,7 +1,7 @@
-import { Awaitable, GuildBasedChannel, GuildEmoji, GuildMember } from "discord.js-selfbot-v13";
+import { Awaitable } from "discord.js-selfbot-v13";
 
 import { AIEnvironment } from "./types/environment.js";
-import { AIManager } from "./manager.js";
+import { AIManager, Characters } from "./manager.js";
 
 export type AIReplacer = (ai: AIManager, environment: AIEnvironment, input: string) => Awaitable<string | null>
 export type AIFormatterType = "input" | "output"
@@ -26,20 +26,21 @@ export const AIFormatters: AIFormatterPair[] = [
         output: {
             match: /<u:(.*?)>/gm,
             replacer: async (_, { guild: { original: guild } }, input) => {
-                const username: string = input.replace("<u:", "").replace(">", "");
-                const user: GuildMember | null = guild.members.cache.find(m => m.user.username === username) ?? null;
+                const username = input.replace("<u:", "").replace(">", "");
+                const user = guild.members.cache.find(m => m.user.username === username);
 
-                return user !== null ? `<@${user.id}>` : null;
+                return user ? `<@${user.id}>` : null;
             }
         },
 
         input: {
             match: /<@(\d+)>/gm,
-            replacer: async (_, { guild: { original: guild } }, input) => {
-                const id: string = input.replace("<@", "").replace(">", "");
+            replacer: async (ai, { guild: { original: guild } }, input) => {
+                const id = input.replace("<@", "").replace(">", "");
 
-                const user: GuildMember | null = guild.members.cache.find(m => m.user.id === id) ?? null;
-                return user !== null ? `@${user.user.username}` : null;
+                const user = guild.members.cache.find(m => m.user.id === id);
+
+                return user ? ` @${user.user.username}` : null;
             }
         }
     },
@@ -50,12 +51,10 @@ export const AIFormatters: AIFormatterPair[] = [
         output: {
             match: /<e:(.*?)>/gm,
             replacer: async (_, { guild: { original: guild } }, input) => {
-                /* Name of the custom emoji */
-                const name: string = input.replace("<e:", "").replace(">", "");
+                const name = input.replace("<e:", "").replace(">", "");
     
-                /* Matching guild emoji */
-                const emoji: GuildEmoji | null = guild.emojis.cache.find(e => e.name === name) ?? null;
-                return emoji !== null ? emoji.toString() : null;
+                const emoji = guild.emojis.cache.find(e => e.name === name);
+                return emoji ? emoji.toString() : null;
             }
         },
 
@@ -66,8 +65,8 @@ export const AIFormatters: AIFormatterPair[] = [
                 if (!name || !id) return null;
     
                 /* Matching guild emoji */
-                const emoji: GuildEmoji | null = guild.emojis.cache.find(e => e.id === id) ?? null;
-                return emoji !== null ? `<e:${emoji.name}>` : null;
+                const emoji = guild.emojis.cache.find(e => e.id === id);
+                return emoji ? `<e:${emoji.name}>` : null;
             }
         }
     },
@@ -78,20 +77,20 @@ export const AIFormatters: AIFormatterPair[] = [
         output: {
             match: /<c:(.*?)>/gm,
             replacer: async (_, { guild: { original: guild } }, input) => {
-                const name: string = input.replace("<c:", "").replace(">", "");
+                const name = input.replace("<c:", "").replace(">", "");
     
-                const channel: GuildBasedChannel | null = guild.channels.cache.find(c => c.name === name && c.type !== "GUILD_CATEGORY") ?? null;
-                return channel !== null ? `<#${channel.id}>` : null;
+                const channel = guild.channels.cache.find(c => c.name === name && c.type !== "GUILD_CATEGORY");
+                return channel ? `<#${channel.id}>` : null;
             }
         },
 
         input: {
             match: /<#(\d+)>/gm,
             replacer: async (_, { guild: { original: guild } }, input) => {
-                const id: string = input.replace("<#", "").replace(">", "");
+                const id = input.replace("<#", "").replace(">", "");
     
-                const channel: GuildBasedChannel | null = guild.channels.cache.find(c => c.id === id) ?? null;
-                return channel !== null ? `#${channel.name}` : null;
+                const channel = guild.channels.cache.find(c => c.id === id);
+                return channel ? `#${channel.name}` : null;
             }
         }
     }
