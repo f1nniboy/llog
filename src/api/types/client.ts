@@ -1,11 +1,12 @@
 import { Awaitable } from "discord.js-selfbot-v13";
 
 import { VectorEntry, VectorInput, VectorResult, VectorSearchOptions } from "./vector.js";
+import { SearchQueryData, SearchQueryOptions } from "./search.js";
 import { ChatRequest, ChatResult } from "./chat.js";
 import { App } from "../../app.js";
 
 export type APIClientType =
-    "chat" | "vector"
+    "chat" | "vector" | "search"
 
 interface APIClientData {
     /** Type of client */
@@ -54,4 +55,14 @@ export abstract class VectorAPIClient<Settings extends APIClientSettings = any> 
 
     public abstract insert<T>(values: VectorInput<T>[]): Promise<VectorEntry<T>[]>;
     public abstract search<T>(options: VectorSearchOptions): Promise<VectorResult<T>[]>;
+}
+
+export abstract class SearchAPIClient<Settings extends APIClientSettings = any> extends APIClient<Settings> {
+    constructor(app: App, name: string) {
+        super(app, {
+            type: "search", name
+        });
+    }
+
+    public abstract search(options: SearchQueryOptions): Promise<SearchQueryData>;
 }

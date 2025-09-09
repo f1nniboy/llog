@@ -302,8 +302,6 @@ export class AIManager {
     }
 
     public delay(ms: number): Promise<void> {
-        // TODO: only for dev
-        return new Promise(resolve => resolve());
-        //return new Promise(resolve => setTimeout(resolve, ms));
+        return new Promise(resolve => setTimeout(resolve, ms));
     }
 }

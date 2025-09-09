@@ -1,5 +1,4 @@
 import { Plugin, PluginResponse, PluginRunOptions } from "./index.js";
-import { search } from "../../util/search.js";
 import { AIManager } from "../manager.js";
 
 interface PluginInput {
@@ -20,7 +19,9 @@ export default class SearchPlugin extends Plugin<PluginInput, PluginOutput> {
     }
 
     public async run({ data: { query } }: PluginRunOptions<PluginInput>): PluginResponse<PluginOutput> {
-        const results = await search({ query });
+        const { results } = await this.ai.app.api.search.search({
+            query, limit: 5
+        });
 
         return {
             data: `Search results for '${query}':\n${results.map(r => `${r.title}: ${r.description}`).join("\n")}`

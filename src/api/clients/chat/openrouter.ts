@@ -3,7 +3,7 @@ import { generateText, jsonSchema, ModelMessage, TextPart, tool, ToolSet } from 
 import { createOpenRouter, OpenRouterProvider } from "@openrouter/ai-sdk-provider";
 import assert from "assert";
 
-import { ChatTEMP_PARAM_InputTool, ChatRequest, ChatResult, ChatContentPart } from "../../types/chat.js";
+import { ChatInputTool, ChatRequest, ChatResult, ChatContentPart } from "../../types/chat.js";
 import { ChatAPIClient } from "../../types/client.js";
 import { App } from "../../../app.js";
 
@@ -12,7 +12,7 @@ interface OpenRouterSettings {
     model: string;
 }
 
-function toAPITools(tools: ChatTEMP_PARAM_InputTool[]): ToolSet {
+function toAPITools(tools: ChatInputTool[]): ToolSet {
     let final: ToolSet = {};
 
     for (const t of tools) {

@@ -1,11 +1,11 @@
+import { Hit } from "@pinecone-database/pinecone/dist/pinecone-generated-ts-fetch/db_data/index.js";
 import { IntegratedRecord, Pinecone, RecordMetadata } from "@pinecone-database/pinecone";
+import assert from "assert";
 import chalk from "chalk";
 
 import { VectorInput, VectorEntry, VectorResult, VectorSearchOptions } from "../../types/vector.js";
 import { VectorAPIClient } from "../../types/client.js";
 import { App } from "../../../app.js";
-import assert from "assert";
-import { Hit } from "@pinecone-database/pinecone/dist/pinecone-generated-ts-fetch/db_data/index.js";
 
 interface PineconeAPISettings {
     key: string;

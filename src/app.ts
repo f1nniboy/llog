@@ -66,9 +66,6 @@ export class App {
             }));
 
         await this.api.load();
-
-
-
         await this.task.load();
         await this.ai.load();
 

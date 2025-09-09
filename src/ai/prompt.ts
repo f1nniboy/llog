@@ -1,6 +1,5 @@
 import assert from "assert";
 
-
 import { AIProcessOptions, Characters } from "./manager.js";
 import { stringToMessageContent } from "../util/chat.js";
 import { AIEnvironment } from "./types/environment.js";

@@ -187,7 +187,7 @@ export class Environment {
                     ? original.recipient.username
                     : original instanceof GroupDMChannel
                         ? original.name ?? `Group chat by ${original.owner.username}`
-                        : "" /* todo: fallback? */
+                        : "Unknown channel"
             , type: this.channelType(original), id: original.id, original
         };
     }

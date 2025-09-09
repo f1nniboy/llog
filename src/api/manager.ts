@@ -2,9 +2,10 @@ import { Collection } from "discord.js-selfbot-v13";
 import { basename } from "path";
 import chalk from "chalk";
 
-import { APIClient, APIClientType, ChatAPIClient, VectorAPIClient } from "./types/client.js";
+import { APIClient, APIClientType, ChatAPIClient, SearchAPIClient, VectorAPIClient } from "./types/client.js";
 import { Utils } from "../util/utils.js";
 import { App } from "../app.js";
+import { ConfigError } from "../error/config.js";
 
 export class APIManager {
     private readonly app: App;
@@ -17,26 +18,36 @@ export class APIManager {
     }
 
     public get chat() {
-        const client = this.get<ChatAPIClient>("chat");
-
-        if (!client) throw new Error("No chat client available");
-        else return client;
+        return this.get<ChatAPIClient>("chat");
     }
 
     public get vector() {
-        const client = this.get<VectorAPIClient>("vector");
-
-        if (!client) throw new Error("No vector client available");
-        else return client;
+        return this.get<VectorAPIClient>("vector");
     }
 
-    private get<T extends APIClient>(type: APIClientType): T | undefined {
-        const name = this.app.config.data.api[type].client;
+    public get search() {
+        return this.get<SearchAPIClient>("search");
+    }
+
+    private get<T extends APIClient>(type: APIClientType): T {
+        const name = this.app.config.data.api[type]?.client;
+        if (!name) throw new ConfigError({
+            message: `Missing settings for ${type} API`,
+            key: `api.${type}`
+        })
 
         const client = this.clients.get(name);
-        if (!client) return;
 
-        if (client.options.type != type) return;
+        if (!client) throw new ConfigError({
+            message: `Invalid client configured for ${type} API`,
+            key: `api.${type}.client`
+        });
+
+        if (client.options.type != type) throw new ConfigError({
+            message: `The client '${client.options.name}' is not usable with ${type} API`,
+            key: `api.${type}.client`
+        });
+
         return client as T;
     }
 

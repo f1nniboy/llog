@@ -75,7 +75,7 @@ export class MemoryManager {
 
     public async retrieve(options: MemoryRetrieveOptions) {
         // TODO search target type and target name
-        return this.ai.app.api.vector.search<AIRawMemoryEntry>({
+        return this.ai.app.api.vector.search<AIRawMemoryEntry>({ 
             field: { name: "text", value: options.text },
             limit: options.limit
         });

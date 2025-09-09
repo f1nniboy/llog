@@ -2,7 +2,7 @@ import { Collection, MessageAttachment, StickerResolvable } from "discord.js-sel
 import { basename } from "path";
 import chalk from "chalk";
 
-import { ChatInputMessage, ChatTEMP_PARAM_InputTool, ChatInputToolParameter, ChatMessage, ChatToolCall } from "../../api/types/chat.js";
+import { ChatInputMessage, ChatInputTool, ChatInputToolParameter, ChatMessage, ChatToolCall } from "../../api/types/chat.js";
 import { AIEnvironment } from "../types/environment.js";
 import { AIMessage } from "../types/history.js";
 import { Utils } from "../../util/utils.js";
@@ -207,8 +207,8 @@ export class PluginManager {
         };
     }
 
-    public asAPITools(plugins: Plugin[]): ChatTEMP_PARAM_InputTool[] {
-        const tools: ChatTEMP_PARAM_InputTool[] = [];
+    public asAPITools(plugins: Plugin[]): ChatInputTool[] {
+        const tools: ChatInputTool[] = [];
 
         for (const p of Array.from(plugins.values())) {
             const empty: boolean = p.options.parameters === null || Object.keys(p.options.parameters).length === 0;

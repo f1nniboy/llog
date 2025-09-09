@@ -25,7 +25,7 @@ export interface ChatInputToolParameter {
     items?: ChatInputToolParameter;
 }
 
-export interface ChatTEMP_PARAM_InputTool {
+export interface ChatInputTool {
     name: string;
     description?: string;
     parameters: ChatInputToolParameter;
@@ -37,7 +37,7 @@ export interface ChatResult {
 
 export interface ChatRequest {
     messages: ChatInputMessage[];
-    tools?: ChatTEMP_PARAM_InputTool[];
+    tools?: ChatInputTool[];
 }
 
 export type ChatContentPart =
