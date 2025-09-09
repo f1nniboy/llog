@@ -1,4 +1,4 @@
-import { Activity, Guild, GuildMember, GuildTextBasedChannel, PresenceStatus, Snowflake, ThreadChannel } from "discord.js-selfbot-v13";
+import { Guild, PresenceStatus, Snowflake, TextBasedChannel, User } from "discord.js-selfbot-v13";
 import { RelationshipTypes } from "discord.js-selfbot-v13/typings/enums.js";
 
 import { AIHistory } from "./history.js";
@@ -19,30 +19,30 @@ export interface AIVoiceState {
     deafened: boolean | null;
 }
 
-export type AIUser = AIObject<GuildMember, {
+export type AIUser = AIObject<User, {
     /** Name of the user */
     name: string;
 
     /** Nickname of the user */
-    nick: string | null;
+    nick?: string;
 
     /** Type of relationship to the user, by the bot */
-    relationship: RelationshipTypes | null;
+    relationship?: RelationshipTypes;
 
     /** Status of the user */
-    status: PresenceStatus | null;
+    status?: PresenceStatus;
 
     /** Current activity of the user */
-    activity: AIActivity | null;
+    activity?: AIActivity;
 
     /** Current voice state of the user */
-    voice: AIVoiceState | null;
+    voice?: AIVoiceState;
 
     /** ID of the user */
     id: string;
 
     /** Whether this user is the self-bot */
-    self: boolean;
+    self?: boolean;
 }>
 
 export type AIEnvironmentGuild = AIObject<Guild, {
@@ -56,7 +56,7 @@ export type AIEnvironmentGuild = AIObject<Guild, {
     owner: AIUser;
 }>
 
-export type AIChannel = GuildTextBasedChannel | ThreadChannel
+export type AIChannel = TextBasedChannel
 export type AIEnvironmentChannelType = "text" | "voice-text" | "stage-text" | "thread"
 
 export type AIEnvironmentChannel = AIObject<AIChannel, {
@@ -72,7 +72,7 @@ export type AIEnvironmentChannel = AIObject<AIChannel, {
 
 export interface AIEnvironment {
     /** The current guild */
-    guild: AIEnvironmentGuild;
+    guild?: AIEnvironmentGuild;
 
     /** The current channel */
     channel: AIEnvironmentChannel;

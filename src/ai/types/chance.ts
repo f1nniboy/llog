@@ -1,0 +1,1 @@
+export type ChanceType = "trigger" | "typo" | "reply"

@@ -1,7 +1,7 @@
-import { AnyChannel, Collection, Guild, Snowflake, VoiceChannel } from "discord.js-selfbot-v13";
+import { Collection, Guild, Snowflake, VoiceChannel } from "discord.js-selfbot-v13";
 import { VoiceConnection, joinVoiceChannel } from "@discordjs/voice";
 
-import { Plugin, PluginResponse, PluginRunOptions } from "./index.js";
+import { Plugin, PluginCheckOptions, PluginResponse, PluginRunOptions } from "./index.js";
 import { AIManager } from "../manager.js";
 
 interface PluginInput {
@@ -52,11 +52,14 @@ export default class VCPlugin extends Plugin<PluginInput, PluginOutput> {
         return this.connections.has(guild.id);
     }
 
-    public async run({ data: { action, name }, environment: { guild: { original: guild } } }: PluginRunOptions<PluginInput>): PluginResponse<PluginOutput> {
-        if (action === "join" && !name) throw new Error("Joining a voice channel requires a channel name");
-        const channel: AnyChannel | null = guild.channels.cache.find(c => c.name === name && c.isVoice()) ?? null;
+    public async run({ data: { action, name }, environment }: PluginRunOptions<PluginInput>): PluginResponse<PluginOutput> {
+        if (!environment.guild) throw new Error("Can only be used on guilds");
+        const { guild: { original: guild } } = environment;
         
-        if (channel === null && action === "join") throw new Error("Channel doesn't exist");
+        if (action === "join" && !name) throw new Error("Joining a voice channel requires a channel name");
+        const channel = guild.channels.cache.find(c => c.name === name && c.isVoice());
+        
+        if (!channel && action === "join") throw new Error("Channel doesn't exist");
         else if (channel) {
             if (!(channel instanceof VoiceChannel)) throw new Error("Specified channel is not a voice channel");
             if (!channel.joinable) throw new Error("Missing permissions to join voice channel");
@@ -72,12 +75,16 @@ export default class VCPlugin extends Plugin<PluginInput, PluginOutput> {
             const connection = this.get(guild);
             if (connection === null) throw new Error("Not connected to a voice channel");
 
-            const channel: VoiceChannel | null = guild.channels.cache.find(c => c.id === connection.joinConfig.channelId)! as VoiceChannel;
+            const channel = guild.channels.cache.find(c => c.id === connection.joinConfig.channelId)! as VoiceChannel;
 
             if (action === "leave") {
                 this.disconnect(connection);
                 return { data: `Disconnected from voice channel ${channel.name}` };
             }
         }
+    }
+
+    public check({ environment }: PluginCheckOptions): boolean {
+        return environment.guild != undefined;
     }
 }

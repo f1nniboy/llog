@@ -1,7 +1,7 @@
 import { Awaitable } from "discord.js-selfbot-v13";
 
 import { AIEnvironment } from "./types/environment.js";
-import { AIManager, Characters } from "./manager.js";
+import { AIManager } from "./manager.js";
 
 export type AIReplacer = (ai: AIManager, environment: AIEnvironment, input: string) => Awaitable<string | null>
 export type AIFormatterType = "input" | "output"
@@ -25,7 +25,10 @@ export const AIFormatters: AIFormatterPair[] = [
 
         output: {
             match: /<u:(.*?)>/gm,
-            replacer: async (_, { guild: { original: guild } }, input) => {
+            replacer: async (_, environment, input) => {
+                if (!environment.guild) return null;
+                const { guild: { original: guild } } = environment;
+
                 const username = input.replace("<u:", "").replace(">", "");
                 const user = guild.members.cache.find(m => m.user.username === username);
 
@@ -35,7 +38,9 @@ export const AIFormatters: AIFormatterPair[] = [
 
         input: {
             match: /<@(\d+)>/gm,
-            replacer: async (ai, { guild: { original: guild } }, input) => {
+            replacer: async (_, environment, input) => {
+                if (!environment.guild) return null;
+                const { guild: { original: guild } } = environment;
                 const id = input.replace("<@", "").replace(">", "");
 
                 const user = guild.members.cache.find(m => m.user.id === id);
@@ -50,7 +55,9 @@ export const AIFormatters: AIFormatterPair[] = [
 
         output: {
             match: /<e:(.*?)>/gm,
-            replacer: async (_, { guild: { original: guild } }, input) => {
+            replacer: async (_, environment, input) => {
+                if (!environment.guild) return null;
+                const { guild: { original: guild } } = environment;
                 const name = input.replace("<e:", "").replace(">", "");
     
                 const emoji = guild.emojis.cache.find(e => e.name === name);
@@ -60,7 +67,9 @@ export const AIFormatters: AIFormatterPair[] = [
 
         input: {
             match: /<(a)?:([\w_]+):(\d+)>/gm,
-            replacer: async (_, { guild: { original: guild } }, input) => {
+            replacer: async (_, environment, input) => {
+                if (!environment.guild) return null;
+                const { guild: { original: guild } } = environment;
                 const [ name, id ] = input.replace("<a:", "").replace("<:", "").replace(">", "").split(":");
                 if (!name || !id) return null;
     
@@ -76,7 +85,9 @@ export const AIFormatters: AIFormatterPair[] = [
 
         output: {
             match: /<c:(.*?)>/gm,
-            replacer: async (_, { guild: { original: guild } }, input) => {
+            replacer: async (_, environment, input) => {
+                if (!environment.guild) return null;
+                const { guild: { original: guild } } = environment;
                 const name = input.replace("<c:", "").replace(">", "");
     
                 const channel = guild.channels.cache.find(c => c.name === name && c.type !== "GUILD_CATEGORY");
@@ -86,7 +97,9 @@ export const AIFormatters: AIFormatterPair[] = [
 
         input: {
             match: /<#(\d+)>/gm,
-            replacer: async (_, { guild: { original: guild } }, input) => {
+            replacer: async (_, environment, input) => {
+                if (!environment.guild) return null;
+                const { guild: { original: guild } } = environment;
                 const id = input.replace("<#", "").replace(">", "");
     
                 const channel = guild.channels.cache.find(c => c.id === id);

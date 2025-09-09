@@ -1,16 +1,12 @@
 import { AIError, AIErrorType } from "./base.js";
-import { APIPath } from "../api/chat/manager.js";
-
-export type APIErrorType = "server_error"
 
 export interface APIErrorData {
-    type: APIErrorType;
     message: string;
 }
 
 export type APIErrorOptions<T> = {
     body: { error: APIErrorData } | null;
-    endpoint: APIPath;
+    endpoint: string;
     code: number;
 }
 

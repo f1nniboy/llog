@@ -1,12 +1,12 @@
 import { DMChannel, GuildTextBasedChannel, Message, Snowflake, ThreadChannel } from "discord.js-selfbot-v13";
-import { AIUser } from "./environment.js";
+import { AIChannel, AIUser } from "./environment.js";
 
 export interface AIHistoryOptions {
     /** How many messages of history to fetch */
     count: number;
 
     /** Which channel to fetch them from */
-    channel: DMChannel | GuildTextBasedChannel | ThreadChannel;
+    channel: AIChannel;
 
     /** Which message ID should be put at the last position */
     message?: Message;

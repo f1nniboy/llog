@@ -25,7 +25,7 @@ export default class DeadChatHandler extends TaskHandler {
                 type: task.type,
                 context: {
                     ...task.context,
-                    instructions: "The current channel has been inactive for a while. I will 'revive' it by saying a generic greeting (hi, hello, hey) or asking people what they're doing (wyad, wyd, what are you up to), or by starting a monologue about some topic I enjoy or just want to talk about randomly. I must say something interesting. Say something that might provoke discussion or get people talking, but start a new topic and don't simply continue old messages."
+                    instructions: "The current channel has been inactive for a while. You will revive it by saying a generic greeting, asking people what they're doing or by starting a monologue about some topic you enjoy or just want to talk about randomly. You must say something interesting. You will say something that might provoke discussion or get people talking, but start a new topic and don't simply continue old messages."
                 }
             }
         });

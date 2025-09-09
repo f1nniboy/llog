@@ -16,8 +16,6 @@ export default class PingTaskHandler extends TaskHandler {
         if (!context.message) throw new Error("no message");
         if (!context.channel.isText()) throw new Error("not a text channel");
 
-        const { message } = context;
-
         await this.app.ai.process({
             type: "chat",
             channel: context.channel as AIChannel,
@@ -26,7 +24,7 @@ export default class PingTaskHandler extends TaskHandler {
         });
     }
 
-    public check({ context: { messageId, guildId, userId } }: TaskCheckOptions): boolean {
+    public check({ context: { messageId } }: TaskCheckOptions): boolean {
         if (!messageId) return false;
         return true;
     }

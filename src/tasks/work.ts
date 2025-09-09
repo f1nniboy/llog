@@ -1,8 +1,8 @@
 import { TaskHandler, TaskRunOptions } from "./index.js";
-import { App } from "../app.js";
 import { AIChannel } from "../ai/types/environment.js";
+import { App } from "../app.js";
 
-export default class AITaskHandler extends TaskHandler {
+export default class WorkTaskHandler extends TaskHandler {
     constructor(app: App) {
         super(app, {
             name: "ai",

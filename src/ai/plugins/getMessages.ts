@@ -23,7 +23,11 @@ export default class GetChannelMessagesPlugin extends Plugin<PluginInput, Plugin
         });
     }
 
-    public async run({ data: { name, amount }, environment: { guild: { original: guild } } }: PluginRunOptions<PluginInput>): PluginResponse<PluginOutput> {
+    public async run({ data: { name, amount }, environment }: PluginRunOptions<PluginInput>): PluginResponse<PluginOutput> {
+        /* TODO: make this work for dms too? */
+        if (!environment.guild) throw new Error("We are not in a server");
+        const { guild: { original: guild } } = environment;
+
         const channel: AnyChannel | null = guild.channels.cache.find(c => c.name === name) ?? null;
 
         if (channel === null) throw new Error("Channel doesn't exist");

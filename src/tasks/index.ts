@@ -6,6 +6,7 @@ import chalk from "chalk";
 
 import { App } from "../app.js";
 import { Utils } from "../util/utils.js";
+import assert from "assert";
 
 export interface ScheduledTask {
     id: string;
@@ -48,7 +49,9 @@ export interface TaskContext {
     triggered?: boolean;
 }
 
-type ScheduleTaskOptions = Pick<ScheduledTask, "time" | "type" | "context">
+type ScheduleTaskOptions =
+    Pick<ScheduledTask, | "type" | "context">
+    & Partial<Pick<ScheduledTask, "time">>
 
 export interface TaskRunOptions {
     task: ScheduledTask;
@@ -130,7 +133,8 @@ export class TaskManager {
         const id = this.randomId();
 
         const task: ScheduledTask = {
-            ...options, id
+            ...options, id,
+            time: options.time ?? Date.now()
         };
 
         this.scheduleQueue(task);
@@ -157,7 +161,7 @@ export class TaskManager {
         const sorted = this.sortTasksByTime();
         const nearTask = sorted.at(0);
 
-        let time = 1234;
+        let time = 0;
 
         /* No new task queued, so we finished the current queue entry,
            and want to wait for the next entry */
@@ -221,11 +225,15 @@ export class TaskManager {
 
     private async fetchTaskContext({ channelId, guildId, messageId, userId, instructions, triggered }: RawTaskContext): Promise<TaskContext> {
         const channel = await this.app.client.channels.fetch(channelId);
-        if (!channel) throw new Error("This shouldn't happen at all");
+        assert(channel);
 
         const guild = guildId ? await this.app.client.guilds.fetch(guildId) : undefined;
 
-        const user = guild && userId ? (await guild.members.fetch(userId)).user : undefined;
+        const user = guild && userId ?
+            await guild.members.fetch(userId)
+                .then(m => m.user)
+                .catch(() => undefined)
+            : undefined;
 
         return {
             channel, guild, user,
@@ -261,7 +269,7 @@ export class TaskManager {
     }
 
     private getHandlerByType(type: string): TaskHandler {
-        if (!this.handlers.has(type)) throw new Error("This shouldn't happen");
+        assert(this.handlers.has(type));
         return this.handlers.get(type)!;
     }
 

@@ -19,7 +19,7 @@ type PluginInput = {
     r: string;
 }
 
-type PluginOutput = RedditPost
+type PluginOutput = string
 
 export default class MemePlugin extends Plugin<PluginInput, PluginOutput> {
     constructor(ai: AIManager) {
@@ -28,7 +28,7 @@ export default class MemePlugin extends Plugin<PluginInput, PluginOutput> {
             description: "Send a funny meme/shitpost in the channel",
             triggers: [ "meme", "shitpost", "shit post", "joke", "picture", "post", "send" ],
             parameters: {
-                r: { type: "string", description: "Which subreddit to use, OPTIONAL", required: false }
+                r: { type: "string", description: "Which subreddit to use", required: false }
             }
         });
     }
@@ -47,7 +47,6 @@ export default class MemePlugin extends Plugin<PluginInput, PluginOutput> {
             url: rawPost.url
         };
 
-        /* Fetch the image data */
         response = await fetch(post.url);
         const image = Buffer.from(await response.arrayBuffer());
 
@@ -59,7 +58,8 @@ export default class MemePlugin extends Plugin<PluginInput, PluginOutput> {
                 new MessageAttachment(image).setName(`${post.title}.${extension}`)
             ],
 
-            data: post, instant: true
+            data: `Sent meme with title "${post.title}" from r/${data.r} to the channel`,
+            instant: true
         };
     }
 }

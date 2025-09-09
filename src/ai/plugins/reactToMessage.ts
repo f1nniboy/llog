@@ -1,4 +1,5 @@
 import { RelationshipTypes } from "discord.js-selfbot-v13/typings/enums.js";
+import { BaseGuildTextChannel } from "discord.js-selfbot-v13";
 
 import { Plugin, PluginResponse, PluginRunOptions } from "./index.js";
 import { AIManager } from "../manager.js";
@@ -24,8 +25,12 @@ export default class ReactPlugin extends Plugin<PluginInput, PluginOutput> {
     }
 
     public async run({ data, environment }: PluginRunOptions<PluginInput>): PluginResponse<PluginOutput> {
-        const { channel: { original: channel }, guild: { original: guild } } = environment;
+        const { channel: { original: channel } } = environment;
+
+        if (!(channel instanceof BaseGuildTextChannel)) return;
         if (!channel.permissionsFor(this.ai.app.client.user)?.has("ADD_REACTIONS")) throw new Error("Missing permissions");
+
+        const guild = environment.guild?.original;
 
         const historyEntry = this.ai.env.getByPart(environment, data.start);
         if (!historyEntry) throw new Error("Message is not in this channel");
@@ -35,11 +40,13 @@ export default class ReactPlugin extends Plugin<PluginInput, PluginOutput> {
 
         try {
             if (data.emoji.startsWith("<e:")) {
+                if (!guild) throw new Error("Cannot use server emojis in DMs");
+
                 /* Name of the guild emoji */
                 const name: string = data.emoji.replace("<e:", "").replace(">", "");
 
                 const emoji = guild.emojis.cache.find(e => e.name === name);
-                if (!emoji) throw new Error("Guild emoji doesn't exist");
+                if (!emoji) throw new Error("Server emoji doesn't exist");
 
                 await message.react(emoji.identifier);
             } else await message.react(data.emoji);

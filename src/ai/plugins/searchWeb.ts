@@ -23,8 +23,7 @@ export default class SearchPlugin extends Plugin<PluginInput, PluginOutput> {
         const results = await search({ query });
 
         return {
-            data: `Search results for '${query}':\n${results.map(r => `${r.title}: ${r.description} (at ${r.date}) [${r.url}]`).join("\n")}`,
-            instructions: "You received these search results from your browser by searching the query"
+            data: `Search results for '${query}':\n${results.map(r => `${r.title}: ${r.description}`).join("\n")}`
         };
     }
 }

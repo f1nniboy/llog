@@ -1,26 +1,34 @@
-import { VectorRetrieveOptions } from "../api/vector/manager.js";
-import { AIManager, AIResult, Characters } from "./manager.js";
-import { AIEnvironment } from "./types/environment.js";
-import { AIMessage } from "./types/history.js";
+import { randomUUID } from "crypto";
 
-interface MemoryInsertOptions {
-    environment: AIEnvironment;
-    trigger: AIMessage;
-    result: AIResult;
+import { AIEnvironment } from "./types/environment.js";
+import { VectorEntry } from "../api/types/vector.js";
+import { AIMessage } from "./types/history.js";
+import { AIManager } from "./manager.js";
+
+export type MemoryTargetType = "guild" | "user" | "self"
+
+export interface MemoryTarget {
+    type: MemoryTargetType;
+    name?: string;
 }
 
-export interface MemoryEntry {
-    id: string;
-    authorId: string;
+export interface MemoryInsertOptions {
+    entries: Omit<AIRawMemoryEntry, "id">[];
+}
+
+export interface MemoryRetrieveOptions {
+    text: string;
+    target?: MemoryTarget;
+    limit?: number;
+}
+
+export interface AIRawMemoryEntry {
     text: string;
     time: string;
-    pluginName?: string;
-    pluginParams?: string;
-    channelId: string;
-    guildId: string;
+    target: MemoryTarget;
 }
 
-export type AIMemory = MemoryEntry[]
+export type AIMemoryEntry = VectorEntry<AIRawMemoryEntry>
 
 export class MemoryManager {
     public readonly ai: AIManager;
@@ -29,31 +37,51 @@ export class MemoryManager {
         this.ai = ai;
     }
 
-    public async insert(options: MemoryInsertOptions) {
-        const { environment, trigger, result } = options;
-        const p = result.plugins.at(0);
+    public async getRelatedMemories(environment: AIEnvironment, trigger?: AIMessage) {
+        if (!trigger) return [];
+        
+        const queries: ({
+            type: MemoryTargetType;
+            name?: string;
+        })[] = [
+            { type: "self" }
+        ];
 
-        await this.ai.app.api.vector.insert({
-            id: trigger.id,
-            time: trigger.when,
-            authorId: trigger.author.id,
-            pluginName: p ? p.plugin.options.name : undefined,
-            pluginParams: p ? JSON.stringify(p.input) : undefined,
-            channelId: environment.channel.id,
-            guildId: environment.guild.id,
-            text: this.formatMemoryEntry(options)
+        //if (environment.guild) queries.push({ type: "guild", name: environment.guild.name });
+        if (trigger) queries.push({ type: "user", name: trigger.author.name });
+
+        const memories: AIMemoryEntry[] = [];
+
+        for (const query of queries) {
+            const results = await this.retrieve({
+                text: `${trigger.replyTo}, ${trigger.content}`,
+                target: query,
+                limit: 3
+            });
+
+            memories.push(...results);
+        }
+
+        return memories;
+    }
+
+    public async insert({ entries }: MemoryInsertOptions) {
+        return this.ai.app.api.vector
+            .insert<AIRawMemoryEntry>(entries.map(e => ({
+                id: randomUUID(),
+                data: e
+            })));
+    }
+
+    public async retrieve(options: MemoryRetrieveOptions) {
+        // TODO search target type and target name
+        return this.ai.app.api.vector.search<AIRawMemoryEntry>({
+            field: { name: "text", value: options.text },
+            limit: options.limit
         });
     }
 
-    public async retrieve(options: VectorRetrieveOptions): Promise<AIMemory> {
-        return this.ai.app.api.vector.retrieve(options);
-    }
-
-    public toMemoryEntry(entry: MemoryEntry) {
-        return `${entry.text}\n\n`;
-    }
-
-    private formatMemoryEntry({ trigger, result }: MemoryInsertOptions) {
-        return `${this.ai.toHistoryEntry(trigger)}\n${this.ai.app.name}${Characters.Separator}${result.content}`;
+    public toMemoryPromptString({ data }: AIMemoryEntry) {
+        return `${data.target.type != "self" ? `${data.target.type} ` : `me`}${data.target.name ? data.target.name : ""}: '${data.text}'`;
     }
 }

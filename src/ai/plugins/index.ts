@@ -2,15 +2,13 @@ import { Collection, MessageAttachment, StickerResolvable } from "discord.js-sel
 import { basename } from "path";
 import chalk from "chalk";
 
-import { OpenAIChatTool, OpenAIChatToolCall, OpenAIChatFunctionParameter } from "../../api/chat/types/function.js";
+import { ChatInputMessage, ChatTEMP_PARAM_InputTool, ChatInputToolParameter, ChatMessage, ChatToolCall } from "../../api/types/chat.js";
 import { AIEnvironment } from "../types/environment.js";
-import { ChatMessage } from "../../api/chat/types/chat.js";
 import { AIMessage } from "../types/history.js";
 import { Utils } from "../../util/utils.js";
-import { AIManager, AIProcessOptions } from "../manager.js";
-import { ChatAPI } from "../../api/chat/manager.js";
+import { AIManager } from "../manager.js";
 
-export type PluginParameter = Omit<OpenAIChatFunctionParameter, "required"> & {
+export type PluginParameter = Omit<ChatInputToolParameter, "required"> & {
     required?: boolean;
 }
 
@@ -33,14 +31,15 @@ export interface PluginRunOptions<Input> {
     data: Input;
 }
 
+export interface PluginCheckOptions {
+    environment: AIEnvironment;
+}
+
 export type PluginResponse<T> = Promise<PluginRawResponse<T> | void>
 
 export type PluginRawResponse<T = any> = {
     /** Data to pass to the AI again */
     data?: T;
-
-    /** Additional instructions to give to the AI */
-    instructions?: string;
 
     /** Stickers to send */
     stickers?: StickerResolvable[];
@@ -55,7 +54,7 @@ export type PluginRawResponse<T = any> = {
 export interface PluginResultData {
     id: string;
     input: object;
-    result: Required<Omit<PluginRawResponse, "instructions">> & Pick<PluginRawResponse, "instructions">;
+    result: Required<PluginRawResponse>;
     error: Error | null;
     plugin: Plugin;
 }
@@ -83,7 +82,7 @@ export abstract class Plugin<Input = any, Output = any> {
      * Check whether a given plugin is available to be used.
      * @returns Whether the plugin is available
      */
-    public isAvailable(): boolean {
+    public check(options: PluginCheckOptions): boolean {
         return true;
     }
 }
@@ -98,10 +97,10 @@ export class PluginManager {
         this.plugins = new Collection();
     }
 
-    private hasTriggeredPlugin(message: AIMessage, plugin: Plugin): boolean {
+    private hasTriggeredPlugin(environment: AIEnvironment, message: AIMessage, plugin: Plugin): boolean {
         if (
-            this.ai.app.config.data.settings.plugins.blacklist.includes(plugin.options.name)
-            || !plugin.isAvailable() 
+            this.ai.app.config.data.plugins.blacklist.includes(plugin.options.name)
+            || !plugin.check({ environment })
         ) return false;
 
         if (!plugin.options.triggers || plugin.options.triggers.length == 0) return true;
@@ -117,17 +116,14 @@ export class PluginManager {
         return false;
     }
 
-    public triggeredPlugins(environment: AIEnvironment, type: AIProcessOptions["type"]): Plugin[] {
+    public triggeredPlugins(environment: AIEnvironment): Plugin[] {
         const all = Array.from(this.plugins.values());
         const arr: Plugin[] = [];
-
-        /* Make use of all plugins when running an AI-initiated task */
-        if (type == "work") return all;
 
         for (const message of environment.history.messages) {
             for (const plugin of all) {
                 if (
-                    this.hasTriggeredPlugin(message, plugin)
+                    this.hasTriggeredPlugin(environment, message, plugin)
                     && !arr.find(p => p.options.name === plugin.options.name)
                 ) {
                     arr.push(plugin);
@@ -138,7 +134,7 @@ export class PluginManager {
         return arr;
     }
 
-    public async executeAll(environment: AIEnvironment, calls: OpenAIChatToolCall[]): Promise<PluginResultData[]> {
+    public async executeAll(environment: AIEnvironment, calls: ChatToolCall[]): Promise<PluginResultData[]> {
         const results: PluginResultData[] = [];
         
         for (const call of calls) {
@@ -155,13 +151,13 @@ export class PluginManager {
      * 
      * @returns An object with each 
      */
-    private async execute(environment: AIEnvironment, { id, name, data }: OpenAIChatToolCall): Promise<PluginResultData | null> {
+    private async execute(environment: AIEnvironment, { id, name, data }: ChatToolCall): Promise<PluginResultData | undefined> {     
         /* Try to get the specified plugin */
         const plugin = this.get(name);
 
         if (!plugin) {
             this.ai.app.logger.warn(`Tried to call non-existent tool ${chalk.bold(name)}.`);
-            return null;
+            return;
         }
 
         /* Try to execute the plugin & save its result */
@@ -181,8 +177,6 @@ export class PluginManager {
                     attachments: result.attachments ?? [],
                     stickers: result.stickers ?? [],
                     instant: result.instant ?? false,
-
-                    instructions: result.instructions,
                     data: result.data ?? "Success"
                 }
             };
@@ -199,20 +193,26 @@ export class PluginManager {
         }
     }
     
-    public asAPIToolCall(result: PluginResultData): ChatMessage {
+    public asAPIToolResult(data: PluginResultData): ChatInputMessage {
         return {
             role: "tool",
-            tool_call_id: result.id,
-            content: ChatAPI.toChatMessage(JSON.stringify(result.result.data))
+            content: [ {
+                type: "tool-result",
+                tool: {
+                    name: data.plugin.options.name,
+                    id: data.id,
+                    data: data.result.data
+                }
+            } ]
         };
     }
 
-    public asAPITools(plugins: Plugin[]): OpenAIChatTool[] {
-        const tools: OpenAIChatTool[] = [];
+    public asAPITools(plugins: Plugin[]): ChatTEMP_PARAM_InputTool[] {
+        const tools: ChatTEMP_PARAM_InputTool[] = [];
 
         for (const p of Array.from(plugins.values())) {
             const empty: boolean = p.options.parameters === null || Object.keys(p.options.parameters).length === 0;
-            const parameters: Record<string, OpenAIChatFunctionParameter> = {};
+            const parameters: Record<string, ChatInputToolParameter> = {};
 
             /* Required parameters */
             const required: string[] = [];
@@ -221,16 +221,13 @@ export class PluginManager {
                 if (param.required) required.push(key);
                 delete param.required;
 
-                parameters[key] = param as OpenAIChatFunctionParameter;
+                parameters[key] = param as ChatInputToolParameter;
             }
 
             tools.push({
-                type: "function",
-                function: {
-                    name: p.options.name, description: p.options.description,
-                    parameters: {
-                        type: "object", properties: parameters, required
-                    }
+                name: p.options.name, description: p.options.description,
+                parameters: {
+                    type: "object", properties: parameters, required
                 }
             });
         }
@@ -238,30 +235,15 @@ export class PluginManager {
         return tools;
     }
 
-    public extractToolCalls(message: ChatMessage): OpenAIChatToolCall[] {
-        return message.tool_calls?.map(t => ({
-            id: t.id,
-            name: t.function.name,
-            data: JSON.parse(t.function.arguments)
-        })) ?? [];
-    }
-
-    public isPluginAvailable(name: string): boolean {
-        const plugin = this.get(name);
-        if (!plugin) return false;
-
-        return plugin.isAvailable();
-    }
-
     public get<T extends Plugin = Plugin>(name: string) {
         return this.plugins.get(name) as T | undefined;
     }
 
     public async load(): Promise<void> {
-        const files: string[] = await Utils.search("./build/ai/plugins");
+        const files = await Utils.search("./build/ai/plugins");
         
         await Promise.all(files.map(async path => {
-            const name: string = basename(path).split(".")[0];
+            const name = basename(path).split(".")[0];
 
             await import(path)
                 .then((data: { [key: string]: Plugin }) => {

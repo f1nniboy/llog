@@ -1,86 +1,87 @@
-import { Snowflake } from "discord.js-selfbot-v13";
+import type { Snowflake } from "discord.js-selfbot-v13";
+import type { DeepPartial } from "tsdef";
+
 import { readFile, watch } from "fs/promises";
 import chalk from "chalk";
 import JSON5 from "json5";
 
-import { ConfigError } from "./error/config.js";
-import { ChanceType } from "./ai/manager.js";
-import { App } from "./app.js";
+import type { ChanceType } from "./ai/types/chance.js";
+import type { ModelType } from "./ai/types/model.js";
+import type { App } from "./app.js";
 
-interface ConfigJSON {
+import { ConfigError } from "./error/config.js";
+import { APIClientType } from "./api/types/client.js";
+
+interface ConfigChatAPI {
+    baseUrl?: string;
+    key: string;
+    temperature?: number;
+}
+
+interface ConfigVectorAPI {
+    key: string;
+}
+
+export interface ConfigJSON {
     discord: {
         /** The token of the Discord account to use as a self-bot */
         token: string;
     }
 
-    keys: {
-        /** OpenAI API key */
-        openai: string;
+    api: Record<APIClientType, {
+        client: string;
+        settings: any;
+    }>;
 
-        /** Pinecone API key, optionally used for persistent memory */
-        pinecone: string;
-    }
+    models: Record<ModelType, string | undefined>;
 
-    settings: {
-        api: {
-            /** Base URL of an OpenAI-compatible API */
-            baseUrl?: string;
+    history: {
+        /** How many messages to fetch for the chat history */
+        length: number;
+    };
 
-            /** Which chat model to use */
-            model: string;
+    memory: {
+        /** How many memories to fetch for an interaction */
+        length: number;
+    };
 
-            /** How creative the AI is */
-            temperature?: number;
-        };
+    plugins: {
+        /** Which plugins to fully disable */
+        blacklist: string[];
+    };
 
-        history: {
-            /** How many messages to fetch for the chat history */
-            length: number;
-        };
+    features: {
+        /** Should a list of users in the chat history be given to the bot */
+        users: boolean;
 
-        memory: {
-            /** How many memories to fetch for an interaction */
-            length: number;
-        };
+        /** Should the bot be able to interact with various tools */
+        // TODO: actually toggle in code
+        plugins: boolean;
+    };
 
-        plugins: {
-            /** Which plugins to fully disable */
-            blacklist: string[];
-        };
+    /** Chances of various events occuring */
+    chances: Record<ChanceType, number>;
 
-        features: {
-            /** Should a list of users in the chat history be given to the bot */
-            users: boolean;
+    /** Blacklisted guilds & users */
+    blacklist: Record<"guilds" | "users", Snowflake>;
 
-            /** Should the bot be able to interact with various tools */
-            // TODO: actually toggle
-            plugins: boolean;
-        };
+    /** Nicknames of the bot, which trigger it */
+    nickname: string[] | string | null;
 
-        /** Chances of various events occuring */
-        chances: Record<ChanceType, number>;
+    /** Various prompts used for the AI */
+    prompts: {
+        /** The tone of the AI when chatting */
+        tone: string | null;
 
-        /** Blacklisted guilds & users */
-        blacklist: Record<"guilds" | "users", Snowflake>;
+        /** How the AI acts */
+        persona: string | null;
 
-        /** Nicknames of the bot, which trigger it */
-        nickname: string[] | string | null;
+        /** Which things the AI is interested in */
+        interests: string[];
 
-        /** Various prompts used for the AI */
-        prompts: {
-            /** The tone of the AI when chatting */
-            tone: string | null;
-
-            /** How the AI acts */
-            persona: string | null;
-
-            /** Which things the AI is interested in */
-            interests: string[];
-
-            /** Which things the AI absolutely dislikes */
-            dislikes: string[];
-        };
-    }
+        /** Which things the AI absolutely dislikes */
+        dislikes: string[];
+    };
 }
 
 interface LoadConfigOptions {
@@ -92,13 +93,15 @@ export class Config {
     private readonly app: App;
 
     /* The actual config JSON data */
-    private _data: ConfigJSON | null;
+    private _data?: ConfigJSON;
 
     constructor(app: App) {
         this.app = app;
-        this._data = null;
-
         this.watch();
+    }
+
+    public api<T extends keyof ConfigJSON["api"]>(name: T): ConfigJSON["api"][T] {
+        return this.data.api[name];
     }
 
     public async load({ reload, fatal }: LoadConfigOptions = {}): Promise<void> {
@@ -109,7 +112,7 @@ export class Config {
             /* If no configuration changes were detected when reloading, simply abort */
             if (reload && this._data && JSON.stringify(this._data) === JSON.stringify(data)) return;
 
-            const error = this.validate(data);
+            const error = await this.validate(data);
             if (error) throw error;
 
             this.app.logger.debug(`${reload ? "Reloaded" : "Loaded"} configuration ${chalk.bold(this.path)}.`);
@@ -136,17 +139,18 @@ export class Config {
         }
     }
 
-    private validate(data: ConfigJSON): ConfigError | undefined {
+    private async validate(data: DeepPartial<ConfigJSON>): Promise<ConfigError | undefined> {
         /* ... */
-        return;
+        return undefined;
     }
 
     public get data(): ConfigJSON {
-        if (this._data === null) throw new Error("Configuration has not been loaded yet");
+        if (!this._data) throw new Error("Configuration has not been loaded yet");
         return this._data;
     }
 
     private get path(): string {
-        return "./src/config.json5";
+        if (process.env.CONFIG_FILE) return process.env.CONFIG_FILE;
+        else return "./src/config.json5";
     }
 }

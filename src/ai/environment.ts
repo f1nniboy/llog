@@ -1,9 +1,8 @@
-import { Activity, Collection, Guild, GuildMember, Message, VoiceState } from "discord.js-selfbot-v13";
+import { BaseGuildTextChannel, Collection, DMChannel, GroupDMChannel, Guild, GuildMember, Message, User } from "discord.js-selfbot-v13";
 
 import { AIChannel, AIEnvironment, AIEnvironmentChannel, AIEnvironmentChannelType, AIEnvironmentGuild, AIObject, AIUser } from "./types/environment.js";
 import { AIHistory, AIMessage, AIHistoryOptions, AIMessageTag, AIMessageAttachment } from "./types/history.js";
 import { AIManager, Characters } from "./manager.js";
-import chalk from "chalk";
 
 /* How many messages can be grouped together, max */
 const GroupingLimit: number = 4
@@ -22,13 +21,16 @@ export class Environment {
 
     public async fetch(discordChannel: AIChannel, message?: Message): Promise<AIEnvironment> {
         const history = await this.history({
-            channel: discordChannel, message, count: this.ai.app.config.data.settings.history.length
+            channel: discordChannel, message, count: this.ai.app.config.data.history.length
         });
 
-        const guild = await this.guild(discordChannel.guild);
+        const guild = discordChannel instanceof BaseGuildTextChannel
+            ? await this.guild(discordChannel.guild)
+            : undefined;
+
         const channel = await this.channel(discordChannel);
 
-        const discordSelf: GuildMember = await guild.original.members.fetchMe();
+        const discordSelfMember = guild ? await guild.original.members.fetchMe() : undefined;
 
         /* The user this reply is directed at */
         const user = message ?
@@ -36,7 +38,8 @@ export class Environment {
             : null;
         
         return {
-            history, guild, channel, user, self: await this.user(discordSelf)
+            self: await this.user(this.ai.app.client.user, discordSelfMember),
+            history, guild, channel, user,
         };
     }
 
@@ -55,22 +58,12 @@ export class Environment {
         for (let index = 0; index < discordMessages.length; index++) {
             const discordMessage = discordMessages[index];
 
-            if (discordMessage.author.bot || discordMessage.content.length === 0) continue;
+            if (discordMessage.content.length === 0) continue;
 
-            /* If the message's author is not available as a member, try to fetch it manually */
-            if (!discordMessage.member) {
-                try {
-                    await discordMessage.guild!.members.fetch(discordMessage.author.id);
-                } catch {
-                    this.ai.app.logger.warn(`Failed to fetch member ${chalk.bold(discordMessage.author.username)} on ${chalk.bold(discordMessage.guild?.name)}.`)
-                }
-            }
-
-            if (!discordMessage.member) continue;
             if (discordMessage.mentions.parsedUsers.some(u => u.bot)) continue;
 
             if (!usersMap.has(discordMessage.author.id)) {
-                const user: AIUser = await this.user(discordMessage.member);
+                const user: AIUser = await this.user(discordMessage.author, discordMessage.member ?? undefined);
                 usersMap.set(user.id, user);
             }
 
@@ -108,7 +101,7 @@ export class Environment {
         const discordReply = message.reference !== null ? await message.fetchReference().catch(() => null) : null;
 
         const reference = discordReply !== null && discordReply.member !== null && discordReply.type === "DEFAULT"
-            ? await this.message(discordReply, await this.user(discordReply.member!))
+            ? await this.message(discordReply, await this.user(discordReply.author, discordReply.member))
             : undefined;
 
         /** Additional tags for the message */
@@ -150,34 +143,36 @@ export class Environment {
         };
     }
 
-    public async user(original: GuildMember): Promise<AIUser> {
-        const activity: Activity | null = original.presence && original.presence.activities.length > 0
-            ? original.presence.activities[0] : null;
+    public async user(original: User, member?: GuildMember): Promise<AIUser> {
+        const activity =
+            member && member.presence && member.presence.activities.length > 0
+                ? member.presence.activities[0]
+                : undefined;
 
-        const voiceState: VoiceState | null = original.guild.voiceStates.cache.get(original.id) ?? null;
+        const voiceState = member?.guild.voiceStates.cache.get(original.id);
 
         return {
-            name: original.user.username, id: original.id,
-            nick: original.nickname,
-            status: original.presence?.status ?? null,
-            relationship: original.user.relationship as any !== "NONE" ? original.user.relationship : null,
-            activity: activity !== null ? {
+            name: original.username, id: original.id,
+            nick: member?.nickname ?? undefined,
+            status: member?.presence?.status,
+            relationship: original.relationship,
+            activity: activity ? {
                 details: activity.details,
                 state: activity.state,
                 name: activity.name
-            } : null,
-            voice: voiceState !== null && voiceState.channel && voiceState.channel.isVoice() ? {
+            } : undefined,
+            voice: voiceState && voiceState.channel && voiceState.channel.isVoice() ? {
                 channel: voiceState.channel.name,
                 deafened: voiceState.deaf,
                 muted: voiceState.mute
-            } : null,
+            } : undefined,
             self: original.id === this.ai.app.id, original
         };
     }
 
     private async guild(original: Guild): Promise<AIEnvironmentGuild> {
         const discordOwner = await original.fetchOwner();
-        const owner = await this.user(discordOwner);
+        const owner = await this.user(discordOwner.user, discordOwner);
 
         return {
             name: original.name, id: original.id, owner, original
@@ -186,7 +181,14 @@ export class Environment {
 
     private async channel(original: AIChannel): Promise<AIEnvironmentChannel> {
         return {
-            name: original.name, type: this.channelType(original), id: original.id, original
+            name: original instanceof BaseGuildTextChannel
+                ? original.name
+                : original instanceof DMChannel
+                    ? original.recipient.username
+                    : original instanceof GroupDMChannel
+                        ? original.name ?? `Group chat by ${original.owner.username}`
+                        : "" /* todo: fallback? */
+            , type: this.channelType(original), id: original.id, original
         };
     }
 
