@@ -52,7 +52,7 @@ export const ConfigSchema = z.object({
             ctx.addIssue("'collector' delay must be higher than all other delays combined");
     }),
 
-    chances: z.record(z.enum(ChanceTypes), z.number().lt(1, {
+    chances: z.record(z.enum(ChanceTypes), z.number().lte(1, {
         error: "Chance can't be higher than 1"
     })),
 

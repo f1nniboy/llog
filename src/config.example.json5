@@ -39,7 +39,7 @@
         collector: { min: 5000, max: 6000 },
 
         /** How long to wait after each sending each message and at the start */
-        start: { min: 800, max: 1400 },
+        start: { min: 800, max: 1500 },
 
         /** How long to wait after displaying status as typing */
         typing: { min: 800, max: 2000 }
