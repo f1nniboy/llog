@@ -31,8 +31,14 @@ export interface ChatInputTool {
     parameters: ChatInputToolParameter;
 }
 
+export interface ChatUsage {
+    input: number;
+    output: number;
+}
+
 export interface ChatResult {
     message: ChatOutputMessage;
+    usage: ChatUsage;
 }
 
 export interface ChatRequest {

@@ -86,7 +86,7 @@ export class AIManager {
 
         /* First, try to generate a response to the given messages */
         let result = await this.app.api.chat.run({
-            messages, tools
+            messages, tools: this.app.config.data.features.plugins ? tools : undefined
         });
 
         const toolResults: PluginResultData[] = [];
@@ -104,13 +104,15 @@ export class AIManager {
             };
 
             /* After executing all requested plugins, send the results back to the AI to generate a response */
-            result = await this.app.api.chat.run({
-                messages: [
-                    ...messages,
-                    result.message,
-                    ...toolResults !== null ? toolResults.map(r => this.plugin.asAPIToolResult(r)) : []
-                ]
-            });
+            if (toolResults.length > 0) {
+                result = await this.app.api.chat.run({
+                    messages: [
+                        ...messages,
+                        result.message,
+                        ...toolResults !== null ? toolResults.map(r => this.plugin.asAPIToolResult(r)) : []
+                    ]
+                });
+            }
         }
 
         return {
@@ -221,8 +223,7 @@ export class AIManager {
             }
 
         } catch (error) {
-            this.app.logger.error(chalk.bold("An error occured while generation"), "->", error);
-            throw error;
+            this.app.logger.error(chalk.bold("An error occured during generation"), "->", error);
         }
     }
 
@@ -248,16 +249,15 @@ export class AIManager {
         return final;
     }
 
-    public toHistoryEntry(message: Pick<AIMessage, "author" | "replyTo" | "content">): string {
+    public toHistoryEntry(message: Pick<AIMessage, "author" | "replyTo" | "content" | "mentioned">): string {
         //const date = new Date(message.when);
         //const formattedTime = `${date.getUTCHours().toString().padStart(2, "0")}:${date.getUTCMinutes().toString().padStart(2, "0")}`;
 
         // [${formattedTime}]
-        // ${message.mentioned ? `[pinged you] ` : ""}
 
         // ${message.tags.length > 0 ? `${message.tags.map(t => `[${t.name}: ${Array.isArray(t.content) ? t.content.join(", ") : t.content}]`).join(" ")}; ` : ""}
 
-        return `${message.author.name}${message.author.nick ? ` (${message.author.nick})` : ""}${message.replyTo ? ` [reply to ${message.replyTo.author.name}: '${message.replyTo.content}']` : ""}${Characters.Separator}${message.content}`;
+        return `${message.mentioned ? "[pinged you]" : ""} ${message.author.name}${message.author.nick ? ` (${message.author.nick})` : ""}${message.replyTo ? ` [reply to ${message.replyTo.author.name}: '${message.replyTo.content}']` : ""}${Characters.Separator}${message.content}`;
     }
 
     public async toAPIMessage(environment: AIEnvironment, message: AIMessage) {
@@ -302,6 +302,7 @@ export class AIManager {
     }
 
     public delay(ms: number): Promise<void> {
-        return new Promise(resolve => setTimeout(resolve, ms));
+        return new Promise(resolve => resolve());
+        //return new Promise(resolve => setTimeout(resolve, ms));
     }
 }

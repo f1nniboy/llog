@@ -2,15 +2,19 @@ import { ImagePart, ReasoningPart, ToolCallPart, ToolResultPart } from "@ai-sdk/
 import { generateText, jsonSchema, ModelMessage, TextPart, tool, ToolSet } from "ai";
 import { createOpenRouter, OpenRouterProvider } from "@openrouter/ai-sdk-provider";
 import assert from "assert";
+import z from "zod";
 
 import { ChatInputTool, ChatRequest, ChatResult, ChatContentPart } from "../../types/chat.js";
+import { chatMessageToString } from "../../../util/chat.js";
 import { ChatAPIClient } from "../../types/client.js";
 import { App } from "../../../app.js";
 
-interface OpenRouterSettings {
-    key: string;
-    model: string;
-}
+const SettingsSchema = z.object({
+  key: z.string(),
+  model: z.string()
+})
+
+type SettingsType = z.infer<typeof SettingsSchema>
 
 function toAPITools(tools: ChatInputTool[]): ToolSet {
     let final: ToolSet = {};
@@ -25,11 +29,11 @@ function toAPITools(tools: ChatInputTool[]): ToolSet {
     return final;
 }
 
-export default class OpenRouterChatClient extends ChatAPIClient<OpenRouterSettings> {
+export default class OpenRouterChatClient extends ChatAPIClient<SettingsType> {
     private instance?: OpenRouterProvider;
 
     constructor(app: App) {
-        super(app, "openrouter");
+        super(app, "openrouter", SettingsSchema);
     }
 
     public load() {
@@ -42,23 +46,27 @@ export default class OpenRouterChatClient extends ChatAPIClient<OpenRouterSettin
         assert(this.instance);
         const model = this.instance(this.settings.model);
 
-        const rawMessages: ModelMessage[] = messages.filter(m => m.role != "system").map<ModelMessage>(m => ({
-            content: m.content.map<TextPart | ImagePart | ToolCallPart | ToolResultPart | ReasoningPart>(m => {
-                if (m.type == "text" || m.type == "reasoning") {
-                    return { type: m.type, text: m.text };
-                } else if (m.type == "image") {
-                    return { type: "image", image: m.url };
-                } else if (m.type == "tool-call") {
-                    return { type: "tool-call", toolCallId: m.tool.id, toolName: m.tool.name, input: m.tool.data };
-                } else if (m.type == "tool-result") {
-                    return { type: "tool-result", toolCallId: m.tool.id, toolName: m.tool.name, output: { type: "json", value: m.tool.data as any } };
-                } else {
-                    throw new Error("Unhandled bot -> API message conversion");
-                }
-            }) as any,
-            role: m.role as any
-        }));
+        //console.log(messages.map(m => chatMessageToString(m)).join("\n\n"));
 
+        const rawMessages: ModelMessage[] = messages.map<ModelMessage>(m => ({
+            content: m.role != "system"
+                ?
+                m.content.map<TextPart | ImagePart | ToolCallPart | ToolResultPart | ReasoningPart | string>(p => {
+                    if (p.type == "text" || p.type == "reasoning") {
+                        return { type: p.type, text: p.text };
+                    } else if (p.type == "image") {
+                        return { type: "image", image: p.url };
+                    } else if (p.type == "tool-call") {
+                        return { type: "tool-call", toolCallId: p.tool.id, toolName: p.tool.name, input: p.tool.data };
+                    } else if (p.type == "tool-result") {
+                        return { type: "tool-result", toolCallId: p.tool.id, toolName: p.tool.name, output: { type: "json", value: p.tool.data as any } };
+                    } else {
+                        throw new Error("Unhandled bot -> API message conversion");
+                    }
+                }) as any
+                : m.content[0].type == "text" ? m.content[0].text : "",
+            role: m.role
+        }));
 
         const result = await generateText({
             model,
@@ -66,11 +74,10 @@ export default class OpenRouterChatClient extends ChatAPIClient<OpenRouterSettin
             messages: rawMessages,
             tools: tools ? toAPITools(tools) : undefined,
 
-            system: messages
-                .filter(m => m.role == "system")
-                .map(m => m.content[0].type == "text" ? m.content[0].text : "").join("\n"),
-
+            temperature: 0.3,
         });
+
+        //console.log(result, result.finishReason, result.totalUsage)
       
         return {
             message: {
@@ -91,6 +98,10 @@ export default class OpenRouterChatClient extends ChatAPIClient<OpenRouterSettin
                     name: c.toolName,
                     data: c.input
                 }))
+            },
+            usage: {
+                input: result.totalUsage.inputTokens ?? 0,
+                output: result.totalUsage.outputTokens ?? 0
             }
         };
     }

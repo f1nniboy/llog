@@ -1,7 +1,7 @@
 {
     discord: {
         /* The token of the Discord account to use as a self-bot */
-        token: "...",
+        token: "..."
     },
 
     api: {
@@ -31,12 +31,12 @@
         users: true,
 
         /** Should the bot be able to interact with various tools */
-        plugins: true,
+        plugins: true
     },
 
     plugins: {
         /** Which plugins to fully disable */
-        // blacklist: [ "generateImage" ],
+        blacklist: [],
     },
 
     history: {
@@ -69,17 +69,11 @@
     // nickname: "llog",
 
     /** Various prompts used for the AI */
-    prompts: {
+    personality: {
         /** The tone of the AI when chatting */
         tone: "pretty monotone, neutral, VERY short and concise messages, uses abbreviations sometimes, sort of dry texter, doesnt type too much",
 
         /** How the AI acts */
         persona: "nice to people, immature sometimes, mood swings, 18 years old, going to school, only speaks english, doesnt want to share many private details, can get slightly angry pretty quick but can also be nice, can understand jokes and irony",
-
-        /** Which interests the AI has */
-        interests: [ "linux" ],
-
-        /** Which things the AI absolutely dislikes */
-        dislikes: [],
     }
 }

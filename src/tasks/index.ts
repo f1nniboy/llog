@@ -203,7 +203,7 @@ export class TaskManager {
 
             await this.process(handler, task);
         } catch (error) {
-            this.app.logger.error(chalk.bold("An error occured while processing the task queue"), "->", error);
+            this.app.logger.error("An error occured while running task", chalk.bold(handler.options.name), "->", error);
         } finally {
             this.current = undefined;
             this.scheduleQueue();

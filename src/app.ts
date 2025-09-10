@@ -40,6 +40,8 @@ export class App {
     }
 
     public async setup(): Promise<void> {
+        await this.api.init();
+
         try {
             await this.config.load({ fatal: true });
         } catch (error) {
@@ -65,11 +67,22 @@ export class App {
                     .catch(error => this.logger.warn("Failed to load event", chalk.bold(name), "->", error));
             }));
 
-        await this.api.load();
+        try {
+            if (!await this.api.load()) process.exit(1);
+        } catch (error)  {
+            this.logger.error("Failed to load API manager", "->", error);
+            process.exit(1);
+        }
+
         await this.task.load();
         await this.ai.load();
 
-        await this.client.login(this.config.data.discord.token);
+        try {
+            await this.client.login(this.config.data.discord.token);
+        } catch (error) {
+            this.logger.error("Failed to log into Discord", "->", error);
+            process.exit(1);
+        }
     }
 
     public get name() {

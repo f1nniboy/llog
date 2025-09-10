@@ -2,83 +2,36 @@ import { Hit } from "@pinecone-database/pinecone/dist/pinecone-generated-ts-fetc
 import { IntegratedRecord, Pinecone, RecordMetadata } from "@pinecone-database/pinecone";
 import assert from "assert";
 import chalk from "chalk";
+import z from "zod";
 
 import { VectorInput, VectorEntry, VectorResult, VectorSearchOptions } from "../../types/vector.js";
 import { VectorAPIClient } from "../../types/client.js";
 import { App } from "../../../app.js";
 
-interface PineconeAPISettings {
-    key: string;
-    indexName?: string;
-}
-
-const FLATTEN_SEPARATOR = "#";
-
-function flattenObject(obj: any, prefix: string = ""): Record<string, any> {
-  const result: Record<string, any> = {};
-
-  for (const key in obj) {
-    if (Object.prototype.hasOwnProperty.call(obj, key)) {
-      const value = obj[key];
-      const newKey = prefix ? `${prefix}${FLATTEN_SEPARATOR}${key}` : key;
-
-      if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-        // Recursively flatten nested objects
-        Object.assign(result, flattenObject(value, newKey));
-      } else {
-        result[newKey] = value;
-      }
-    }
-  }
-
-  return result;
-}
-
-function unflattenObject(flat: Record<string, any>): any {
-  const result: any = {};
-
-  for (const key in flat) {
-    if (Object.prototype.hasOwnProperty.call(flat, key)) {
-      const keys = key.split(FLATTEN_SEPARATOR);
-      let current = result;
-
-      // Traverse keys to build nested structure
-      for (let i = 0; i < keys.length - 1; i++) {
-        const k = keys[i];
-        if (!current[k]) {
-          current[k] = {};
-        }
-        current = current[k];
-      }
-
-      // Set the value at the final key
-      current[keys[keys.length - 1]] = flat[key];
-    }
-  }
-
-  return result;
-}
+const SettingsSchema = z.object({
+  key: z.string(),
+  indexName: z.string().optional()
+});
 
 function dbToNativeVector<T>(input: Hit): VectorResult<T> {
     return {
         id: input._id,
         score: input._score,
-        data: unflattenObject(input.fields)
+        data: input.fields as T
     };
 }
 
 function nativeToDbVector<T>(input: VectorInput<T>): IntegratedRecord<RecordMetadata> {
     return {
-        id: input.id,
-        ...flattenObject(input.data)
+        id: input.id, ...input.data
     };
 }
 
-export default class PineconeVectorClient extends VectorAPIClient<PineconeAPISettings> {
+export default class PineconeVectorClient extends VectorAPIClient<z.infer<typeof SettingsSchema>> {
     private instance?: Pinecone;
 
     constructor(app: App) {
-        super(app, "pinecone");
+        super(app, "pinecone", SettingsSchema);
     }
 
     public async load() {
@@ -97,7 +50,7 @@ export default class PineconeVectorClient extends VectorAPIClient<PineconeAPISet
                 fieldMap: { text: "text" }
             },
             suppressConflicts: true,
-            waitUntilReady: true
+            waitUntilReady: false
         });
 
         this.app.logger.debug(`Loaded vector database ${chalk.bold(this.indexName)}.`);
@@ -107,16 +60,16 @@ export default class PineconeVectorClient extends VectorAPIClient<PineconeAPISet
         assert(this.instance);
 
         await this.index.upsertRecords(values.map(v => nativeToDbVector(v)));
-
-        return [];
+        return values;
     }
 
-    public async search<T>(options: VectorSearchOptions): Promise<VectorResult<T>[]> {
+    public async search<T>(options: VectorSearchOptions<T>): Promise<VectorResult<T>[]> {
         assert(this.instance);
 
         const results = await this.index.searchRecords({
             query: {
                 inputs: { [options.field.name]: options.field.value },
+                filter: options.filters,
                 topK: options.limit ?? 10
             }
         });

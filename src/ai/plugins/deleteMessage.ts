@@ -10,8 +10,8 @@ type PluginOutput = string
 export default class DeleteMessagePlugin extends Plugin<PluginInput, PluginOutput> {
     constructor(ai: AIManager) {
         super(ai, {
-            name: "deleteMessagee",
-            description: "Delete a message from this channel",
+            name: "deleteMessage",
+            description: "Delete message from channel",
             triggers: [ "delete" ],
             parameters: {
                 start: { type: "string", description: "Part of a message content to delete, to identify it", required: true }

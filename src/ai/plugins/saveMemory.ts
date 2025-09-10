@@ -16,7 +16,7 @@ export default class SaveMemoryPlugin extends Plugin<PluginInput, PluginOutput> 
     constructor(ai: AIManager) {
         super(ai, {
             name: "saveMemory",
-            description: "Save chat information: about a user, Discord server or into your own ('self') memory. You can save multiple memories at a time, by adding more objects to the array. Only save related interactions/things per array entry.",
+            description: "Save chat information can save multiple memories at a time Only save related interactions/things per entry",
             parameters: {
                 targets: {
                     type: "array",
@@ -32,7 +32,7 @@ export default class SaveMemoryPlugin extends Plugin<PluginInput, PluginOutput> 
                             },
                             name: {
                                 type: "string",
-                                description: "Name of the Discord user or guild to store the memory for, empty if 'self'"
+                                description: "Name of user or guild to remember memory"
                             }
                         },
 
@@ -46,17 +46,15 @@ export default class SaveMemoryPlugin extends Plugin<PluginInput, PluginOutput> 
     public async run({ data: { targets } }: PluginRunOptions<PluginInput>): PluginResponse<PluginOutput> {
         const inserted = await this.ai.memory.insert({
             entries: targets.map(t => ({
-                target: {
-                    type: t.type,
-                    name: t.name
-                },
+                targetType: t.type,
+                targetName: t.name,
                 text: t.text,
                 time: new Date().toISOString()
             }))
         })
 
         return {
-            data: `New memory added: ${inserted.map(t => `${this.ai.memory.toMemoryPromptString(t)}`).join("\n")}`
+            data: `New memory added, you don't have to mention: ${inserted.map(t => `${this.ai.memory.toMemoryPromptString(t)}`).join("\n")}`
         };
     }
 }

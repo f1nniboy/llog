@@ -2,82 +2,98 @@ import assert from "assert";
 
 import { AIProcessOptions, Characters } from "./manager.js";
 import { stringToMessageContent } from "../util/chat.js";
+import { ChatInputMessage } from "../api/types/chat.js";
 import { AIEnvironment } from "./types/environment.js";
-import { ChatMessage } from "../api/types/chat.js";
 import { AIMemoryEntry } from "./memory.js";
 import { Utils } from "../util/utils.js";
 import { App } from "../app.js";
 
-/*
-HISTORY:
-You are given a chat history of previous messages in the chat and when they were sent.
-Look at the timestamps to figure out when messages were sent.
-You should prioritize responding to recent messages instead of reviving dead threads.
-You are not forced to interact with any messages, do as you wish.
+type InstructionType = "static" | "dynamic" | "memories" | "users" | "task"
 
-TOOLS:
-If a tool requests a 'start' parameter, insert a few words of the start of the message to interact with, so it can be identified.
-You can call a tool of a single type multiple times, by simply adding it multiple times to the JSON.
-Make sure you never run a user's request involving tools double: check if you already acknowledged the request before executing.
+interface InstructionOptions {
+    app: App;
+    env: AIEnvironment;
+    memories: AIMemoryEntry[];
+    request: AIProcessOptions;
+    cache?: boolean;
+}
 
-
-*/
+const Instructions: Record<InstructionType, (options: InstructionOptions) => (string | undefined)[] | string | undefined> = {
+    static: ({ app, env }) => [
+        `act as real human Discord user named ${env.self.name}`,
+        "never break character",
+        app.config.data.personality.tone,
+        app.config.data.personality.persona,
+        "make up information about self if needed",
+        "must remember new important information and detailed descriptions",
+        `insert ${Characters.Splitting} to split message`,
+        "only reply last message"
+    ],
+    dynamic: ({ env }) => [
+        `in ${env.guild ? `server ${env.guild.name}, channel #${env.channel.name}` : `DM with ${env.channel.name}`}`,
+        `date: ${Utils.formatDate()}`
+    ],
+    memories: ({ app, memories }) => `previous memories, use if applicable:\n${
+        memories.map(m => app.ai.memory.toMemoryPromptString(m)).join("\n")
+    }`,
+    users: ({ app, env }) => `users currently in chat:\n${
+        env.history.users.map(
+            user => `${user.name} =\n${app.ai.env.stringify(user, [ "name", "self", "bio" ])}`
+        ).join("\n")
+    }`,
+    task: ({ request }) =>
+        request.task ? [
+            "Fulfill following task using tools, added at ${Utils.formatDate(new Date(request.task.time))}",
+            "Do not write a reply unless asked",
+            request.task.context.instructions
+        ] : undefined
+};
 
 export class Prompts {
-    public static baseInstructions(
-        app: App,
-        env: AIEnvironment
-    ) {
-        const {
-            prompts: {
-                tone, persona, interests, dislikes
-            },
-            nickname
-        } = app.config.data;
+    public static instructions(
+        type: InstructionType,
+        options: InstructionOptions
+    ): ChatInputMessage[] {
+        const raw = Instructions[type](options);
 
-        return `
-You're a real Discord user named ${env.self.name}, never break character. 
-Tone: ${tone || ""}.
-Persona: ${persona || ""}. 
-Interests: ${interests.join(", ")}.
-Dislikes: ${dislikes.join(", ")}. 
-In ${env.guild ? `${env.guild.name} #${env.channel.name} ${env.channel.type}` : `PM with ${env.channel.name}`}. 
-Nickname(s): ${nickname ? (typeof nickname === "string" ? nickname : nickname.join(", ")) : ""}. 
-Date: ${Utils.formatDate(new Date())}.
-
-Insert "${Characters.Splitting}" to split messages. Reply only to the last message. If none, use "${Characters.Ignore}". 
-Format: "{author} ({nick}) ([reply to...:'...'])${Characters.Separator}{content}".
-
-You must save important/new information you revealed about yourself or were told by users using saveMemory tool.
-Use properly and use often. Only save information learned from recent message in history.
-
-Continue.
-`;
+        const result: string[] = Array.isArray(raw)
+            ? raw.filter(i => i && i.length > 0) as string[]
+            : raw ? [ raw ] : [];
+                
+        return [ {
+            role: "system",
+            content: stringToMessageContent(result.join("\n"))
+        } ];
     }
 
     public static async chat(
         app: App,
-        _options: AIProcessOptions,
-        environment: AIEnvironment,
+        options: AIProcessOptions,
+        env: AIEnvironment,
         memories: AIMemoryEntry[]
-    ): Promise<ChatMessage[]> {
-        const m: ChatMessage[] = [];
+    ): Promise<ChatInputMessage[]> {
+        const m: ChatInputMessage[] = [];
         const features = app.config.data.features;
 
-        if (features.users) m.push({
-            role: "system", content: stringToMessageContent(`Users currently in chat:\n${environment.history.users.map(user => `${user.name} =\n${app.ai.env.stringify(user, [ "name", "self", "bio" ])}`).join("\n")}`)
-        });
+        const o: InstructionOptions = {
+            app, request: options, env, memories
+        };
 
-        m.push({
-            role: "system", content: stringToMessageContent(Prompts.baseInstructions(app, environment))
-        });
+        m.push(
+            ...Prompts.instructions("static", {  ...o, cache: true }),
+            ...Prompts.instructions("dynamic", o)
+        );
 
-        if (memories.length > 0) m.push({
-            role: "system", content: stringToMessageContent(`Your previous memories which may be fitting, use if applicable:\n${memories.map(m => app.ai.memory.toMemoryPromptString(m)).join("\n")}`)
-        });
+        if (memories.length > 0) m.push(
+            ...Prompts.instructions("memories", o)
+        );
 
-        for (const message of environment.history.messages) {
-            m.push(await app.ai.toAPIMessage(environment, message));
+        if (features.users) m.push(
+            ...Prompts.instructions("users", o) 
+        );
+
+        for (const message of env.history.messages) {
+            m.push(await app.ai.toAPIMessage(env, message));
         }
 
         return m;
@@ -86,23 +102,23 @@ Continue.
     public static async work(
         app: App,
         options: AIProcessOptions,
-        environment: AIEnvironment,
-        _memories: AIMemoryEntry[]
-    ): Promise<ChatMessage[]> {
+        env: AIEnvironment,
+        memories: AIMemoryEntry[]
+    ): Promise<ChatInputMessage[]> {
         assert(options.task);
         assert(options.task.context.instructions);
 
-        const m: ChatMessage[] = [];
+        const m: ChatInputMessage[] = [];
 
-        m.push({
-            role: "system", content: stringToMessageContent(`
-${Prompts.baseInstructions(app, environment)}
+        const o: InstructionOptions = {
+            app, request: options, env, memories
+        };
 
-YOUR TASK:
-Your task is to fulfill the following task, which you wrote to your memory to remember, added at ${Utils.formatDate(new Date(options.task.time))}:
-""${options.task.context.instructions}""
-Fulfill it using tools.`)
-        });
+        m.push(
+            ...Prompts.instructions("static", {  ...o, cache: true }),
+            ...Prompts.instructions("dynamic", o),
+            ...Prompts.instructions("task", o)
+        );
 
         return m;
     }

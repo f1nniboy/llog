@@ -2,7 +2,7 @@ import { Collection, MessageAttachment, StickerResolvable } from "discord.js-sel
 import { basename } from "path";
 import chalk from "chalk";
 
-import { ChatInputMessage, ChatInputTool, ChatInputToolParameter, ChatMessage, ChatToolCall } from "../../api/types/chat.js";
+import { ChatInputMessage, ChatInputTool, ChatInputToolParameter, ChatToolCall } from "../../api/types/chat.js";
 import { AIEnvironment } from "../types/environment.js";
 import { AIMessage } from "../types/history.js";
 import { Utils } from "../../util/utils.js";
@@ -99,7 +99,7 @@ export class PluginManager {
 
     private hasTriggeredPlugin(environment: AIEnvironment, message: AIMessage, plugin: Plugin): boolean {
         if (
-            this.ai.app.config.data.plugins.blacklist.includes(plugin.options.name)
+            this.ai.app.config.data.plugins.blacklist?.includes(plugin.options.name)
             || !plugin.check({ environment })
         ) return false;
 

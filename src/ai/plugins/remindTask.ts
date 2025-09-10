@@ -19,10 +19,10 @@ export default class RemindTaskPlugin extends Plugin<PluginInput, PluginOutput> 
     constructor(ai: AIManager) {
         super(ai, {
             name: "remindTask",
-            description: "Remind to do something in a specific amount of time. Describe the task to plan in detail",
+            description: "Remind something, describe the task plan in detail",
             parameters: {
-                instructions: { type: "string", description: "What to do when the time comes, detailed explanation for yourself", required: true },
-                time: { type: "string", description: "UTC ISO Date string, when to run this task. Use given current time to figure this out", required: true }
+                instructions: { type: "string", description: "Detailed explanation of task", required: true },
+                time: { type: "string", description: "UTC ISO Date string, when to run", required: true }
             }
         });
     }

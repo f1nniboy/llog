@@ -15,12 +15,12 @@ export default class UpdateUserPlugin extends Plugin<PluginInput, PluginOutput> 
     constructor(ai: AIManager) {
         super(ai, {
             name: "updateUser",
-            description: "Update a user or yourself on the server (e.g. changing nick or timing out), you don't have to specify all params",
+            description: "Update user or self on guild",
             triggers: [ "nick", "time out", "timeout", "rename", "update", "shut up", "still" ],
             parameters: {
-                name: { type: "string", description: "Which user to modify", required: true },
-                nick: { type: "string", description: "New nickname for the user", required: false },
-                timeout: { type: "number", description: "How long to time the user out, in seconds, null to remove", required: true }
+                name: { type: "string", required: true },
+                nick: { type: "string", required: false },
+                timeout: { type: "number", description: "in seconds, null to remove", required: false }
             }
         });
     }

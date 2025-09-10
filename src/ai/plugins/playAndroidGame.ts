@@ -12,11 +12,11 @@ export default class PlayAndroidGamePlugin extends Plugin<PluginInput, PluginOut
     constructor(ai: AIManager) {
         super(ai, {
             name: "playAndroidGame",
-            description: "Make it seem like you are playing an Android game",
+            description: "Make it seem like you are playing Android game",
             triggers: [ "play", "game" ],
             parameters: {
-                action: { type: "string", description: "Whether to START or STOP playing a game", enum: [ "START", "STOP" ], required: true },
-                gameId: { type: "string", description: "Name of the game, e.g. com.riotgames.league.wildrift - must be a valid Android package", required: true }
+                action: { type: "string", enum: [ "START", "STOP" ], required: true },
+                gameId: { type: "string", description: "Android package of game, e.g. com.riotgames.league.wildrift", required: false }
             }
         });
     }
@@ -32,9 +32,5 @@ export default class PlayAndroidGamePlugin extends Plugin<PluginInput, PluginOut
         } catch (_) {
             throw new Error("Game doesn't exist");
         }
-    }
-
-    public check(options: PluginCheckOptions): boolean {
-        return false;
     }
 }

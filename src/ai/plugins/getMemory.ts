@@ -16,7 +16,7 @@ export default class GetMemoryPlugin extends Plugin<PluginInput, PluginOutput> {
     constructor(ai: AIManager) {
         super(ai, {
             name: "getMemory",
-            description: "Accepts search query objects array each with query and optional filter. Break down complex questions into sub-questions. Refine results by criteria, e.g. time / source, don't do this often.",
+            description: "Search for previous memories",
             parameters: {
                 queries: {
                     type: "array",

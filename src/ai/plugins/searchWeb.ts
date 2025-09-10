@@ -11,9 +11,9 @@ export default class SearchPlugin extends Plugin<PluginInput, PluginOutput> {
     constructor(ai: AIManager) {
         super(ai, {
             name: "searchWeb",
-            description: "Search for something on Google in your browser. Use this for searching newly available information or topics you don't know about",
+            description: "Search something in browser, use for new/unknown topics",
             parameters: {
-                query: { type: "string", description: "What to search for", required: true },
+                query: { type: "string", required: true },
             }
         });
     }

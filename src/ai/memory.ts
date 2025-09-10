@@ -25,7 +25,8 @@ export interface MemoryRetrieveOptions {
 export interface AIRawMemoryEntry {
     text: string;
     time: string;
-    target: MemoryTarget;
+    targetType: MemoryTargetType;
+    targetName?: string;
 }
 
 export type AIMemoryEntry = VectorEntry<AIRawMemoryEntry>
@@ -74,14 +75,17 @@ export class MemoryManager {
     }
 
     public async retrieve(options: MemoryRetrieveOptions) {
-        // TODO search target type and target name
         return this.ai.app.api.vector.search<AIRawMemoryEntry>({ 
             field: { name: "text", value: options.text },
+            filters: {
+                targetName: options.target?.name,
+                targetType: options.target?.type
+            },
             limit: options.limit
         });
     }
 
     public toMemoryPromptString({ data }: AIMemoryEntry) {
-        return `${data.target.type != "self" ? `${data.target.type} ` : `me`}${data.target.name ? data.target.name : ""}: '${data.text}'`;
+        return `${data.targetType != "self" ? `${data.targetType} ` : `me`}${data.targetName ? data.targetName : ""}: '${data.text}'`;
     }
 }

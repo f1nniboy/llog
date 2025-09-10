@@ -1,88 +1,62 @@
-import type { Snowflake } from "discord.js-selfbot-v13";
-import type { DeepPartial } from "tsdef";
-
 import { readFile, watch } from "fs/promises";
+import z, { ZodError } from "zod";
 import chalk from "chalk";
 import JSON5 from "json5";
 
-import type { ChanceType } from "./ai/types/chance.js";
-import type { ModelType } from "./ai/types/model.js";
-import type { App } from "./app.js";
-
+import { APIClientTypes } from "./api/types/client.js";
+import { ChanceTypes } from "./ai/types/chance.js";
 import { ConfigError } from "./error/config.js";
-import { APIClientType } from "./api/types/client.js";
+import { App } from "./app.js";
 
-interface ConfigChatAPI {
-    baseUrl?: string;
-    key: string;
-    temperature?: number;
-}
+export const ConfigSchema = z.object({
+    discord: z.object({
+        token: z.string(),
+    }),
 
-interface ConfigVectorAPI {
-    key: string;
-}
+    api: z.record(z.enum(APIClientTypes), z.object({
+        client: z.string(),
+        settings: z.any(),
+    })),
 
-export interface ConfigJSON {
-    discord: {
-        /** The token of the Discord account to use as a self-bot */
-        token: string;
-    }
+    history: z.object({
+        length: z.number(),
+    }),
 
-    api: Record<APIClientType, {
-        client: string;
-        settings: any;
-    }>;
+    memory: z.object({
+        length: z.number(),
+    }),
 
-    models: Record<ModelType, string | undefined>;
+    plugins: z.object({
+        blacklist: z.array(z.string()).optional(),
+    }),
 
-    history: {
-        /** How many messages to fetch for the chat history */
-        length: number;
-    };
+    features: z.record(
+        z.enum([ "users", "plugins" ]),
+        z.boolean()
+    ),
 
-    memory: {
-        /** How many memories to fetch for an interaction */
-        length: number;
-    };
+    chances: z.record(z.enum(ChanceTypes), z.number().lt(1, {
+        error: "Chance can't be higher than 1"
+    })),
 
-    plugins: {
-        /** Which plugins to fully disable */
-        blacklist: string[];
-    };
+    blacklist: z.record(
+        z.enum([ "guilds", "users" ]),
+        z.array(z.string()).optional()
+    ).optional(),
 
-    features: {
-        /** Should a list of users in the chat history be given to the bot */
-        users: boolean;
+    nickname: z.union([
+        z.array(z.string()),
+        z.string(),
+        z.undefined()
+    ]),
 
-        /** Should the bot be able to interact with various tools */
-        // TODO: actually toggle in code
-        plugins: boolean;
-    };
+    personality: z.object({
+        tone: z.string().optional(),
+        persona: z.string().optional(),
+    }),
+});
 
-    /** Chances of various events occuring */
-    chances: Record<ChanceType, number>;
-
-    /** Blacklisted guilds & users */
-    blacklist: Record<"guilds" | "users", Snowflake>;
-
-    /** Nicknames of the bot, which trigger it */
-    nickname: string[] | string | null;
-
-    /** Various prompts used for the AI */
-    prompts: {
-        /** The tone of the AI when chatting */
-        tone: string | null;
-
-        /** How the AI acts */
-        persona: string | null;
-
-        /** Which things the AI is interested in */
-        interests: string[];
-
-        /** Which things the AI absolutely dislikes */
-        dislikes: string[];
-    };
-}
+export type ConfigType = z.infer<typeof ConfigSchema>;
 
 interface LoadConfigOptions {
     reload?: boolean;
@@ -92,37 +66,43 @@ interface LoadConfigOptions {
 export class Config {
     private readonly app: App;
 
-    /* The actual config JSON data */
-    private _data?: ConfigJSON;
+    /** The actual config JSON data */
+    private _data?: ConfigType;
+
+    private lastTimestamp?: number;
 
     constructor(app: App) {
         this.app = app;
         this.watch();
     }
 
-    public api<T extends keyof ConfigJSON["api"]>(name: T): ConfigJSON["api"][T] {
-        return this.data.api[name];
-    }
-
     public async load({ reload, fatal }: LoadConfigOptions = {}): Promise<void> {
+        const now = Date.now();
+
+        /* Fix this.load() being called twice */
+        if (now - (this.lastTimestamp ?? 0) < 500) return;
+        this.lastTimestamp = now;
+
         try {
             const raw = (await readFile(this.path)).toString();
-            const data: any = JSON5.parse(raw);
+            const newData = JSON5.parse(raw);
 
             /* If no configuration changes were detected when reloading, simply abort */
-            if (reload && this._data && JSON.stringify(this._data) === JSON.stringify(data)) return;
+            if (reload && this._data && this.compare(this._data, newData)) return;
 
-            const error = await this.validate(data);
-            if (error) throw error;
+            const error = await this.validate(newData);
+            if (error) throw ConfigError.fromZod(error);
 
             this.app.logger.debug(`${reload ? "Reloaded" : "Loaded"} configuration ${chalk.bold(this.path)}.`);
-            this._data = data;
+            this._data = newData;
 
         } catch (error) {
             if (error instanceof SyntaxError) {
                 const { lineNumber, columnNumber } = error as any;
                 this.app.logger.error(`Configuration ${chalk.bold(this.path)} contains syntax error at ${chalk.bold(lineNumber)}:${chalk.bold(columnNumber)} ->`, error.message);
 
+            } else if (error instanceof ConfigError) {
+                this.app.logger.error("Failed to load configuration,", error.toString());
             } else {
                 this.app.logger.error("Failed to load configuration", chalk.bold("->"), error);
             }
@@ -139,12 +119,19 @@ export class Config {
         }
     }
 
-    private async validate(data: DeepPartial<ConfigJSON>): Promise<ConfigError | undefined> {
-        /* ... */
-        return undefined;
+    private async validate(data: ConfigType): Promise<ZodError | undefined> {
+        let error: ZodError | undefined = ConfigSchema.safeParse(data)?.error;
+        if (error) return error;
+
+        error = await this.app.api.validateAll(data);
+        if (error) return error;
     }
 
-    public get data(): ConfigJSON {
+    private compare(a: ConfigType, b: ConfigType) {
+      return JSON.stringify(a) == JSON.stringify(b);
+    }
+
+    public get data(): ConfigType {
         if (!this._data) throw new Error("Configuration has not been loaded yet");
         return this._data;
     }

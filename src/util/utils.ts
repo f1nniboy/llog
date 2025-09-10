@@ -27,7 +27,7 @@ export class Utils {
 		return Buffer.from(uri.split(",")[1], "base64");
 	}
 
-	public static formatDate(date: Date) {
+	public static formatDate(date: Date = new Date()) {
 		const dateString = date.toLocaleDateString("en-US", {
 			day: "numeric",
 			month: "long",

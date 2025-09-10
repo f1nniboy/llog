@@ -5,7 +5,7 @@ import { AIHistory, AIMessage, AIHistoryOptions, AIMessageTag, AIMessageAttachme
 import { AIManager, Characters } from "./manager.js";
 
 /* How many messages can be grouped together, max */
-const GroupingLimit: number = 4
+const GroupingLimit: number = 5
 
 export class Environment {
     private readonly ai: AIManager;
@@ -59,7 +59,6 @@ export class Environment {
             const discordMessage = discordMessages[index];
 
             if (discordMessage.content.length === 0) continue;
-
             if (discordMessage.mentions.parsedUsers.some(u => u.bot)) continue;
 
             if (!usersMap.has(discordMessage.author.id)) {

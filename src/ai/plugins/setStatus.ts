@@ -14,10 +14,10 @@ export default class ChangeStatusPlugin extends Plugin<PluginInput, PluginOutput
     constructor(ai: AIManager) {
         super(ai, {
             name: "setStatus",
-            description: "Change your Discord status, displayed on your profile",
+            description: "Change Discord status message",
             parameters: {
-                text: { type: "string", description: "Text of the status", required: true },
-                emoji: { type: "string", description: "Emoji next to the status" }
+                text: { type: "string", required: true },
+                emoji: { type: "string" }
             }
         });
     }

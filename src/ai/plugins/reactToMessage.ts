@@ -15,11 +15,11 @@ export default class ReactPlugin extends Plugin<PluginInput, PluginOutput> {
     constructor(ai: AIManager) {
         super(ai, {
             name: "reactToMessage",
-            description: "React to a message in this channel with an emoji, either Unicode or <e:...> emoji (can't remove reactions like this)",
+            description: "React to message in channel with emoji, Unicode or <e:...> emoji",
             triggers: [ "react" ],
             parameters: {
-                start: { type: "string", description: "Part of a message content to react to in this channel", required: true },
-                emoji: { type: "string", description: "Unicode or Discord emoji to react with", required: true }
+                start: { type: "string", description: "Part of message content to react to in channel", required: true },
+                emoji: { type: "string", description: "Unicode or Discord emoji to use", required: true }
             }
         });
     }

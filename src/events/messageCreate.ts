@@ -18,8 +18,8 @@ export default class MessageCreateEvent extends Event<"messageCreate"> {
             message.author.id === this.app.id || !message.channel.isText()
         ) return;
 
-        if (this.app.config.data.blacklist.users.includes(message.author.id)) return;
-        if (message.guild && this.app.config.data.blacklist.guilds.includes(message.guild.id)) return;
+        if (this.app.config.data.blacklist?.users?.includes(message.author.id)) return;
+        if (message.guild && this.app.config.data.blacklist?.guilds?.includes(message.guild.id)) return;
 
         if (
             message.channel instanceof GuildChannel
@@ -39,7 +39,7 @@ export default class MessageCreateEvent extends Event<"messageCreate"> {
             });
         }
 
-        const nicknames = this.app.config.data.nickname !== null ?
+        const nicknames = this.app.config.data.nickname ?
                 typeof this.app.config.data.nickname === "string"
                     ? [ this.app.config.data.nickname ]
                     : this.app.config.data.nickname

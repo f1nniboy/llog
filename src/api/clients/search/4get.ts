@@ -1,10 +1,12 @@
-import { SearchQueryData, SearchQueryOptions, SearchResult, SearchResultDescriptionPart } from "../../types/search.js";
+import z from "zod";
+
+import { SearchQueryData, SearchQueryOptions, SearchResult } from "../../types/search.js";
 import { SearchAPIClient } from "../../types/client.js";
 import { App } from "../../../app.js";
 
-interface FourGetAPISettings {
-    url: string;
-}
+const SettingsSchema = z.object({
+  url: z.string(),
+});
 
 interface RawSearchResult {
     status: string;
@@ -16,13 +18,14 @@ interface RawSearchResult {
     })[];
 }
 
-export default class FourGetSearchClient extends SearchAPIClient<FourGetAPISettings> {
+export default class FourGetSearchClient extends SearchAPIClient<z.infer<typeof SettingsSchema>> {
     constructor(app: App) {
-        super(app, "4get");
+        super(app, "4get", SettingsSchema);
     }
 
     public async search({ query, limit }: SearchQueryOptions): Promise<SearchQueryData> {
         const url = new URL(`${this.settings.url}/api/v1/web`);
+
         url.searchParams.append("s", query);
 
         const response = await fetch(url);
