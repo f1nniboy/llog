@@ -16,20 +16,20 @@ export interface AIFormatter {
 
 export type AIFormatterPair = Partial<Record<AIFormatterType, AIFormatter>> & {
     /* Name of this formatter pair */
-    name: "User mentions" | "Custom emojis" | "Channels";
+    name: "mentions" | "emojis" | "channels";
 }
 
 export const AIFormatters: AIFormatterPair[] = [
     {
-        name: "User mentions",
+        name: "mentions",
 
         output: {
-            match: /<u:(.*?)>/gm,
+            match: /@(\w+)/gm,
             replacer: async (_, environment, input) => {
                 if (!environment.guild) return null;
                 const { guild: { original: guild } } = environment;
 
-                const username = input.replace("<u:", "").replace(">", "");
+                const username = input.replace("@", "");
                 const user = guild.members.cache.find(m => m.user.username === username);
 
                 return user ? `<@${user.id}>` : null;
@@ -44,14 +44,13 @@ export const AIFormatters: AIFormatterPair[] = [
                 const id = input.replace("<@", "").replace(">", "");
 
                 const user = guild.members.cache.find(m => m.user.id === id);
-
-                return user ? ` @${user.user.username}` : null;
+                return user ? `@${user.user.username}` : null;
             }
         }
     },
 
     {
-        name: "Custom emojis",
+        name: "emojis",
 
         output: {
             match: /<e:(.*?)>/gm,
@@ -73,7 +72,6 @@ export const AIFormatters: AIFormatterPair[] = [
                 const [ name, id ] = input.replace("<a:", "").replace("<:", "").replace(">", "").split(":");
                 if (!name || !id) return null;
     
-                /* Matching guild emoji */
                 const emoji = guild.emojis.cache.find(e => e.id === id);
                 return emoji ? `<e:${emoji.name}>` : null;
             }
@@ -81,16 +79,18 @@ export const AIFormatters: AIFormatterPair[] = [
     },
 
     {
-        name: "Channels",
+        name: "channels",
 
         output: {
-            match: /<c:(.*?)>/gm,
+            match: /#(\w+)/gm,
             replacer: async (_, environment, input) => {
                 if (!environment.guild) return null;
                 const { guild: { original: guild } } = environment;
-                const name = input.replace("<c:", "").replace(">", "");
-    
-                const channel = guild.channels.cache.find(c => c.name === name && c.type !== "GUILD_CATEGORY");
+
+                const channelName = input.replace("#", "");
+                const channel = guild.channels.cache.find(c => c.name === channelName && c.type !== "GUILD_CATEGORY");
+
+                if (!channel?.viewable) return null;
                 return channel ? `<#${channel.id}>` : null;
             }
         },

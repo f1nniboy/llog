@@ -5,7 +5,6 @@ import assert from "assert";
 import z from "zod";
 
 import { ChatInputTool, ChatRequest, ChatResult, ChatContentPart } from "../../types/chat.js";
-import { chatMessageToString } from "../../../util/chat.js";
 import { ChatAPIClient } from "../../types/client.js";
 import { App } from "../../../app.js";
 
