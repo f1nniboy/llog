@@ -34,6 +34,17 @@
         plugins: true
     },
 
+    delays: {
+        /** How long to wait after an initial ping (@mention or reply) for additional messages */
+        collector: { min: 5000, max: 6000 },
+
+        /** How long to wait after each sending each message and at the start */
+        start: { min: 800, max: 1400 },
+
+        /** How long to wait after displaying status as typing */
+        typing: { min: 800, max: 2000 }
+    },
+
     plugins: {
         /** Which plugins to fully disable */
         blacklist: [],
@@ -50,9 +61,6 @@
     },
 
     chances: {
-        /** Bot replies to a message where it hasn't been mentioned */
-        trigger: 0.05,
-
         /** Bot makes a typo */
         typo: 0.1,
 

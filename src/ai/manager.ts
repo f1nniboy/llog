@@ -18,6 +18,8 @@ import { Prompts } from "./prompt.js";
 import { App } from "../app.js";
 import { ChatAPIClient } from "../api/types/client.js";
 import { chatMessageToString } from "../util/chat.js";
+import { DelayType } from "./types/delay.js";
+import { Utils } from "../util/utils.js";
 
 type AIGenerationType = "chat" | "work"
 
@@ -128,7 +130,7 @@ export class AIManager {
         if (message && message.author.id == this.app.id) return;
 
         /* Add a small random delay, to make the bot feel more human-like */
-        if (type == "chat") await this.delay(this.typingDelay());
+        if (type == "chat") await this.wait(this.delay("start"));
 
         const environment = await this.env.fetch(
             channel, triggered ? message : undefined
@@ -201,9 +203,9 @@ export class AIManager {
                 const makeTypo = this.chance("typo");
                 if (makeTypo && part.length > 0) part = Typo.add(part);
 
-                await this.delay(this.typingDelay());
+                await this.wait(this.delay("start"));
                 if (part.length > 0) await channel.sendTyping();
-                await this.delay(this.sendingDelay(part));
+                await this.wait(this.delay("typing"));
                 
                 const reply = await channel.send({
                     reply: (this.chance("reply") || shouldReply) && !replied && triggered && message ? { messageReference: message, failIfNotExists: false } : undefined,
@@ -215,7 +217,7 @@ export class AIManager {
                 });
 
                 if (makeTypo && result !== part) {
-                    await this.delay(this.typingDelay());
+                    await this.wait(this.delay("start"));
                     await reply.edit(result);
                 }
 
@@ -287,22 +289,27 @@ export class AIManager {
         return data;
     }
 
-    /** The delay for sending a reply, after it's been generated */
-    private sendingDelay(content: string): number {
-        return Math.max(2000, content.length * 35) + Math.random() * 1500;
-    }
-
-    /** The delay for actually acknowledging a message first & then generating a reply */
-    private typingDelay(): number {
-        return (Math.random() * 1.5 + 1) * 1000;
-    }
-
     public chance(type: ChanceType): boolean {
         return Math.random() > 1 - this.app.config.data.chances[type];
     }
 
-    public delay(ms: number): Promise<void> {
-        return new Promise(resolve => resolve());
-        //return new Promise(resolve => setTimeout(resolve, ms));
+    public wait(ms: number): Promise<void> {
+        if (ms <= 0) return new Promise(resolve => resolve());
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    public delay(type: DelayType) {
+        const data = this.app.config.data.delays[type];
+        if (!data) return 0;
+
+        return Utils.randomNumber(data.min, data.max);
+    }
+
+    public get nicknames() {
+        return this.app.config.data.nickname ?
+                typeof this.app.config.data.nickname === "string"
+                    ? [ this.app.config.data.nickname ]
+                    : this.app.config.data.nickname
+                : [];
     }
 }

@@ -5,6 +5,7 @@ import JSON5 from "json5";
 
 import { APIClientTypes } from "./api/types/client.js";
 import { ChanceTypes } from "./ai/types/chance.js";
+import { DelayTypes } from "./ai/types/delay.js";
 import { ConfigError } from "./error/config.js";
 import { App } from "./app.js";
 
@@ -34,6 +35,22 @@ export const ConfigSchema = z.object({
         z.enum([ "users", "plugins" ]),
         z.boolean()
     ),
+
+    delays: z.record(
+        z.enum(DelayTypes),
+        z.object({
+            min: z.number(),
+            max: z.number()
+        }).optional().superRefine((data, ctx) => {
+            if (data && data.min > data.max)
+                ctx.addIssue("min can't be higher than max");
+        })
+    ).superRefine((data, ctx) => {
+        const totalOther = (data.start?.max ?? 0) + (data.typing?.max ?? 0);
+
+        if (data.collector && totalOther > data.collector.max)
+            ctx.addIssue("'collector' delay must be higher than all other delays combined");
+    }),
 
     chances: z.record(z.enum(ChanceTypes), z.number().lt(1, {
         error: "Chance can't be higher than 1"

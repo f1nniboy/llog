@@ -26,7 +26,7 @@ const Instructions: Record<InstructionType, (options: InstructionOptions) => (st
         app.config.data.personality.persona,
         "make up information about self if needed",
         "must remember new important information and detailed descriptions",
-        `insert ${Characters.Splitting} to split message`,
+        `can insert ${Characters.Splitting} to split message, do not overuse`,
         "only reply last message"
     ],
     dynamic: ({ env }) => [

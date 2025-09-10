@@ -25,7 +25,6 @@ export default class FourGetSearchClient extends SearchAPIClient<z.infer<typeof 
 
     public async search({ query, limit }: SearchQueryOptions): Promise<SearchQueryData> {
         const url = new URL(`${this.settings.url}/api/v1/web`);
-
         url.searchParams.append("s", query);
 
         const response = await fetch(url);

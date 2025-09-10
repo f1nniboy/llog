@@ -20,7 +20,7 @@ export default class PingTaskHandler extends TaskHandler {
             type: "chat",
             channel: context.channel as AIChannel,
             message: context.message,
-            triggered: context.triggered
+            triggered: true
         });
     }
 
