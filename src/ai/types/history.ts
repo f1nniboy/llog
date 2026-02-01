@@ -1,59 +1,49 @@
-import { DMChannel, GuildTextBasedChannel, Message, Snowflake, ThreadChannel } from "discord.js-selfbot-v13";
-import { AIChannel, AIUser } from "./environment.js";
+import { Message, Snowflake } from "discord.js-selfbot-v13"
+import { AIUsableChannel, AIUser } from "./environment.js"
 
 export interface AIHistoryOptions {
-    /** How many messages of history to fetch */
-    count: number;
-
     /** Which channel to fetch them from */
-    channel: AIChannel;
+    channel: AIUsableChannel
 
-    /** Which message ID should be put at the last position */
-    message?: Message;
+    /** Which messages should be put at the last position */
+    triggers?: Message[]
 }
 
 export interface AIMessageTag {
-    name: string;
-    content: string[] | string;
-}
-
-export interface AIMessageAttachment {
-    url: string;
+    name: string
+    content: string[] | string
 }
 
 export interface AIMessage {
     /** ID of the message */
-    id: Snowflake;
+    id: Snowflake
 
     /** Author of the message */
-    author: AIUser;
+    author: AIUser
 
     /** When the message was posted, as an ISO date string */
-    when: string;
+    when: string
 
     /** Content of the message */
-    content: string;
-
-    /** Attachments of the message */
-    attachments: AIMessageAttachment[];
+    content: string
 
     /** Additional tags for the message */
-    tags: AIMessageTag[];
+    tags: AIMessageTag[]
 
     /** Which message this one is replying to */
-    replyTo?: AIMessage;
+    replyTo?: AIMessage
 
     /** Whether the message was sent by the bot */
-    self?: boolean;
+    self?: boolean
 
     /** Whether the message mentioned the bot */
-    mentioned?: boolean;
+    mentioned?: boolean
 }
 
 export interface AIHistory {
     /** Users in the chat history */
-    users: AIUser[];
+    users: AIUser[]
 
     /** Messages in the chat history */
-    messages: AIMessage[];
+    messages: AIMessage[]
 }

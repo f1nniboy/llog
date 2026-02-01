@@ -1,36 +1,52 @@
-import { Plugin, PluginCheckOptions, PluginResponse, PluginRunOptions } from "./index.js";
-import { AIManager } from "../manager.js";
+import { Plugin, PluginResponse, PluginRunOptions } from "./index.js"
+import { AIManager } from "../manager.js"
 
 interface PluginInput {
-    action: "START" | "STOP";
-    gameId: string;
+    action: "START" | "STOP"
+    gameId: string
 }
 
 type PluginOutput = string
 
-export default class PlayAndroidGamePlugin extends Plugin<PluginInput, PluginOutput> {
+export default class PlayAndroidGamePlugin extends Plugin<
+    PluginInput,
+    PluginOutput
+> {
     constructor(ai: AIManager) {
         super(ai, {
             name: "playAndroidGame",
             description: "Make it seem like you are playing Android game",
-            triggers: [ "play", "game" ],
+            triggers: ["play", "game"],
             parameters: {
-                action: { type: "string", enum: [ "START", "STOP" ], required: true },
-                gameId: { type: "string", description: "Android package of game, e.g. com.riotgames.league.wildrift", required: false }
-            }
-        });
+                action: {
+                    type: "string",
+                    enum: ["START", "STOP"],
+                    required: true,
+                },
+                gameId: {
+                    type: "string",
+                    description: "Android package of game",
+                    required: false,
+                },
+            },
+        })
     }
 
-    public async run({ data: { action, gameId } }: PluginRunOptions<PluginInput>): PluginResponse<PluginOutput> {
+    public async run({
+        data: { action, gameId },
+    }: PluginRunOptions<PluginInput>): PluginResponse<PluginOutput> {
         try {
-            await this.ai.app.client.user.setSamsungActivity(gameId, action);
+            await this.ai.app.client.user.setSamsungActivity(gameId, action)
 
             return {
-                data: action === "START" ? `Playing the game ${gameId} now` : `Stopped playing the game ${gameId}`
-            };
-            
+                data:
+                    action == "START"
+                        ? `Playing the game ${gameId} now`
+                        : `Stopped playing the game ${gameId}`,
+            }
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (_) {
-            throw new Error("Game doesn't exist");
+            throw new Error("Game doesn't exist")
         }
     }
 }

@@ -1,20 +1,21 @@
 {
     "compilerOptions": {
-      "lib": [ "ESNext" ],
-      "rootDirs": [ "./src" ],
-      "outDir": "./build",
-      "module": "nodenext",
-      "target": "esnext",
-      "moduleResolution": "nodenext",
-      "strict": true,
-      "downlevelIteration": true,
-      "skipLibCheck": true,
-      "jsx": "preserve",
-      "allowSyntheticDefaultImports": true,
-      "forceConsistentCasingInFileNames": true,
-      "resolveJsonModule": true,
-      "allowJs": true,
-      "experimentalDecorators": true, 
-      "emitDecoratorMetadata": true,
-    }
+        "lib": ["ESNext"],
+        "rootDirs": ["./src"],
+        "outDir": "./build",
+        "module": "nodenext",
+        "target": "esnext",
+        "moduleResolution": "nodenext",
+        "strict": true,
+        "downlevelIteration": true,
+        "skipLibCheck": true,
+        "jsx": "preserve",
+        "allowSyntheticDefaultImports": true,
+        "forceConsistentCasingInFileNames": true,
+        "resolveJsonModule": true,
+        "allowJs": true,
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true
+    },
+    "exclude": ["node_modules", "build", "eslint*"]
 }

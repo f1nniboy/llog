@@ -1,52 +1,68 @@
-import { Plugin, PluginResponse, PluginRunOptions } from "./index.js";
-import { AIManager } from "../manager.js";
+import { Plugin, PluginResponse, PluginRunOptions } from "./index.js"
+import { AIManager } from "../manager.js"
 
 interface PluginInput {
-    instructions: string;
-    time: string;
+    instructions: string
+    time: string
 }
 
 type PluginOutput = string
 
 function isoToTimestamp(text: string) {
-    const date = new Date(text);
-    if (isNaN(date.getTime())) return undefined;
+    const date = new Date(text)
+    if (isNaN(date.getTime())) return undefined
 
-    return Math.floor(date.getTime());
+    return Math.floor(date.getTime())
 }
 
-export default class RemindTaskPlugin extends Plugin<PluginInput, PluginOutput> {
+export default class RemindTaskPlugin extends Plugin<
+    PluginInput,
+    PluginOutput
+> {
     constructor(ai: AIManager) {
         super(ai, {
             name: "remindTask",
             description: "Remind something, describe the task plan in detail",
             parameters: {
-                instructions: { type: "string", description: "Detailed explanation of task", required: true },
-                time: { type: "string", description: "UTC ISO Date string, when to run", required: true }
-            }
-        });
+                instructions: {
+                    type: "string",
+                    description: "Detailed explanation of task",
+                    required: true,
+                },
+                time: {
+                    type: "string",
+                    description: "UTC ISO Date string, when to run",
+                    required: true,
+                },
+            },
+        })
     }
 
-    public async run({ environment: { guild, channel, user }, data: { instructions, time: isoStr } }: PluginRunOptions<PluginInput>): PluginResponse<PluginOutput> {
-        const time = isoToTimestamp(isoStr);
-        if (!time) throw new Error("Invalid date given");
+    public async run({
+        environment: { guild, channel, user },
+        data: { instructions, time: isoStr },
+    }: PluginRunOptions<PluginInput>): PluginResponse<PluginOutput> {
+        const time = isoToTimestamp(isoStr)
+        if (!time) throw new Error("Invalid date given")
 
         const success = await this.ai.app.task.add({
-            type: "ai", time,
+            type: "work",
+            time,
             context: {
-                guildId: guild?.id,
-                channelId: channel.id,
-                userId: user?.id,
-                instructions
-            }
-        });
+                guild: guild?.original,
+                channel: channel.original,
+                author: user?.original,
+                instructions,
+            },
+        })
 
-        if (!success) return {
-            data: `Couldn't remind myself to do '${instructions}', perhaps I already have too many things to remember`
-        };
+        if (!success)
+            return {
+                data: `Couldn't remind myself to '${instructions}', I already have too many things to remember`,
+            }
 
         return {
-            data: `Reminded myself to do '${instructions}' at ${time}`
-        };
+            data: `Reminded myself to '${instructions}' at ${isoStr}`,
+        }
     }
 }

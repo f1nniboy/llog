@@ -1,31 +1,25 @@
-import { TaskCheckOptions, TaskHandler, TaskRunOptions } from "./index.js";
-import { AIChannel } from "../ai/types/environment.js";
-import { App } from "../app.js";
+import { AIUsableChannel } from "../ai/types/environment.js"
+import { TaskHandler, TaskRunOptions } from "./index.js"
+import { App } from "../app.js"
 
-export default class PingTaskHandler extends TaskHandler {
+export default class PingTaskHandler extends TaskHandler<"ping"> {
     constructor(app: App) {
         super(app, {
             name: "ping",
             settings: {
-                maxQueue: 2
-            }
-        });
+                maxQueue: 2,
+            },
+        })
     }
 
-    public async run({ context }: TaskRunOptions) {
-        if (!context.message) throw new Error("no message");
-        if (!context.channel.isText()) throw new Error("not a text channel");
+    public async run({ task: { context } }: TaskRunOptions<"ping">) {
+        if (!context.channel.isText()) throw new Error("not a text channel")
 
         await this.app.ai.process({
             type: "chat",
-            channel: context.channel as AIChannel,
-            message: context.message,
-            triggered: true
-        });
+            channel: context.channel as AIUsableChannel,
+            triggers: context.messages,
+            author: context.author,
+        })
     }
-
-    public check({ context: { messageId } }: TaskCheckOptions): boolean {
-        if (!messageId) return false;
-        return true;
-    }
-}   
+}

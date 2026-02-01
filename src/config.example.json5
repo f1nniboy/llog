@@ -1,37 +1,64 @@
 {
     discord: {
         /* The token of the Discord account to use as a self-bot */
-        token: "..."
+        token: "...",
     },
 
     api: {
-        chat: {
-            client: "openrouter",
-            settings: {
+        settings: {
+            llamacpp: {
+                models: {
+                    chat: "hf:giladgd/gpt-oss-20b-GGUF/gpt-oss-20b.MXFP4.gguf",
+                    embeddings: "hf:CompendiumLabs/bge-small-en-v1.5-gguf/bge-small-en-v1.5-f16.gguf"
+                }
+            },
+            openrouter: {
                 key: "sk-or-v1-...",
-                model: "google/gemini-2.5-pro"
+                model: "google/gemini-3-pro-preview"
+            },
+            pinecone: {
+                key: "pcsk_...",
+                indexName: "chatbot",
+                models: {
+                    embed: "llama-text-embed-v2"
+                }
+            },
+            "vectra": {
+                path: "./index"
+            },
+            "4get": {
+                url: "https://search.oss.zone"
             }
         },
-        vector: {
-            client: "pinecone",
-            settings: {
-                key: "pcsk_..."
-            }
-        },
-        search: {
-            client: "4get",
-            settings: {
-                url: "https://4get.ch"
-            }
+
+        clients: {
+            chat: "openrouter",
+            vector: "pinecone",
+            search: "4get",
+            embeddings: "pinecone"
         }
     },
 
     features: {
-        /** Should a list of users in the chat history be given to the bot (uses more tokens) */
-        users: true,
-
-        /** Should the bot be able to interact with various tools */
-        plugins: true
+        memory: {
+            enable: false
+        },
+        users: {
+            enable: false
+        },
+        plugins: {
+            enable: false
+        },
+        classify: {
+            enable: false
+        },
+        history: {
+            enable: true,
+            settings: {
+                length: 10,
+                groupByAuthor: false
+            }
+        }
     },
 
     delays: {
@@ -45,32 +72,17 @@
         typing: { min: 800, max: 2000 }
     },
 
-    plugins: {
-        /** Which plugins to fully disable */
-        blacklist: [],
-    },
-
-    history: {
-        /** How many messages to fetch for the chat history */
-        length: 10,
-    },
-
-    memory: {
-        /** How many memories to fetch for an interaction */
-        length: 5,
-    },
-
     chances: {
         /** Bot makes a typo */
-        typo: 0.1,
+        typo: 0.01,
 
         /** Bot references the message in its reply instead of just sending it in the channel */
-        reply: 0.6,
+        reply: 1,
     },
 
     blacklist: {
-        guilds: [ "1234" ],
-        users: [ "5678" ],
+        guilds: ["1234"],
+        users: ["5678"],
     },
 
     /** Nicknames of the bot, which trigger it */
@@ -83,5 +95,5 @@
 
         /** How the AI acts */
         persona: "nice to people, immature sometimes, mood swings, 18 years old, going to school, only speaks english, doesnt want to share many private details, can get slightly angry pretty quick but can also be nice, can understand jokes and irony",
-    }
+    },
 }
