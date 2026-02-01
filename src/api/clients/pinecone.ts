@@ -1,9 +1,5 @@
 import { Hit } from "@pinecone-database/pinecone/dist/pinecone-generated-ts-fetch/db_data/index.js"
-import {
-    Pinecone,
-    PineconeRecord,
-    RecordMetadata,
-} from "@pinecone-database/pinecone"
+import { Pinecone } from "@pinecone-database/pinecone"
 import assert from "assert"
 import chalk from "chalk"
 import z from "zod"
@@ -45,7 +41,7 @@ export default class PineconeVectorClient extends APIClient<
     constructor(app: App) {
         super(app, {
             name: "pinecone",
-            types: ["vector", "embeddings"],
+            types: ["vector"],
             settings: SettingsSchema,
         })
     }
@@ -82,27 +78,9 @@ export default class PineconeVectorClient extends APIClient<
     ): Promise<VectorEntry<T>[]> {
         assert(this.instance)
 
-        if (this.usedFor("embeddings")) {
-            await this.index.upsertRecords(
-                values.map((v) => nativeToDbVector(v)),
-            )
-        } else {
-            const toInsert: PineconeRecord<RecordMetadata>[] = []
-
-            for (const v of values) {
-                const embedding = await this.app.api.embeddings.getEmbedding({
-                    text: v.data.text,
-                })
-
-                toInsert.push({
-                    id: v.id,
-                    metadata: v.data,
-                    values: embedding.data,
-                })
-            }
-
-            await this.index.upsert(toInsert)
-        }
+        await this.index.upsertRecords({
+            records: values.map((v) => nativeToDbVector(v)),
+        })
 
         return values
     }
@@ -113,35 +91,17 @@ export default class PineconeVectorClient extends APIClient<
         assert(this.instance)
         const results: Hit[] = []
 
-        if (this.usedFor("embeddings")) {
-            results.push(
-                ...(
-                    await this.index.searchRecords({
-                        query: {
-                            inputs: { text: options.text },
-                            filter: options.filters,
-                            topK: options.limit ?? 10,
-                        },
-                    })
-                ).result.hits,
-            )
-        } else {
-            const embedding = await this.app.api.embeddings.getEmbedding({
-                text: options.text,
-            })
-
-            results.push(
-                ...(
-                    await this.index.searchRecords({
-                        query: {
-                            vector: { values: embedding.data },
-                            filter: options.filters,
-                            topK: options.limit ?? 10,
-                        },
-                    })
-                ).result.hits,
-            )
-        }
+        results.push(
+            ...(
+                await this.index.searchRecords({
+                    query: {
+                        inputs: { text: options.text },
+                        filter: options.filters,
+                        topK: options.limit ?? 10,
+                    },
+                })
+            ).result.hits,
+        )
 
         return results.map((r) => dbToNativeVector(r))
     }

@@ -1,3 +1,4 @@
+import assert from "assert"
 import { Plugin, PluginResponse, PluginRunOptions } from "./index.js"
 import { MemoryTargetType } from "../memory.js"
 import { AIManager } from "../manager.js"
@@ -60,12 +61,17 @@ export default class SaveMemoryPlugin extends Plugin<
             })),
         })
 
+        assert(inserted)
+
         return {
             data: `New memory added, you don't have to mention:\n${inserted.map((t) => `${this.ai.memory.toMemoryPromptString(t)}`).join("\n")}`,
         }
     }
 
     public check() {
-        return this.ai.app.config.feature("memory").enable
+        return (
+            this.ai.app.config.feature("memory").enable &&
+            this.ai.app.api.vector != undefined
+        )
     }
 }

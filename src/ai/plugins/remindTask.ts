@@ -26,7 +26,8 @@ export default class RemindTaskPlugin extends Plugin<
             parameters: {
                 instructions: {
                     type: "string",
-                    description: "Detailed explanation of task",
+                    description:
+                        "Detailed explanation of task, always use full usernames for users",
                     required: true,
                 },
                 time: {

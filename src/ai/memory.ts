@@ -64,14 +64,14 @@ export class MemoryManager {
                 limit: feat.settings.length,
             })
 
-            memories.push(...results)
+            if (results) memories.push(...results)
         }
 
         return memories
     }
 
     public async insert({ entries }: MemoryInsertOptions) {
-        return this.ai.app.api.vector.insertVector<AIRawMemoryEntry>(
+        return this.ai.app.api.vector?.insertVector<AIRawMemoryEntry>(
             entries.map((e) => ({
                 id: randomUUID(),
                 data: e,
@@ -80,7 +80,7 @@ export class MemoryManager {
     }
 
     public async retrieve(options: MemoryRetrieveOptions) {
-        return this.ai.app.api.vector.searchVector<AIRawMemoryEntry>({
+        return this.ai.app.api.vector?.searchVector<AIRawMemoryEntry>({
             text: options.text,
             filters: {
                 targetName: options.target?.name,

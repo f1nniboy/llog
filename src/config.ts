@@ -31,7 +31,7 @@ export const ConfigSchema = z.object({
 
     api: z.object({
         settings: z.record(z.string(), APIClientSettingsSchema),
-        clients: z.record(z.enum(APIClientTypes), z.string()),
+        clients: z.record(z.enum(APIClientTypes), z.nullable(z.string())),
     }),
 
     features: z

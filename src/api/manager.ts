@@ -34,12 +34,10 @@ export class APIManager {
         return this.type("search")
     }
 
-    public get embeddings(): SpecificAPIClient<"getEmbedding"> {
-        return this.type("embeddings")
-    }
-
-    private type<T extends APIClient>(type: APIClientType): T {
+    private type<T extends APIClient>(type: APIClientType): T | null {
         const name = this.app.config.data.api.clients[type]
+        if (!name) return null
+
         return this.clients.get(name) as T
     }
 
@@ -50,6 +48,8 @@ export class APIManager {
     public async validateAll(data: ConfigType) {
         for (const type of APIClientTypes) {
             const name = data.api.clients[type]
+            if (!name) continue
+
             const client = this.get(name)
 
             if (!client)
@@ -96,7 +96,9 @@ export class APIManager {
     public async loadAll() {
         const set = new Set(Object.values(this.app.config.data.api.clients))
 
-        const clients = Array.from(set).map((name) => this.get(name))
+        const clients = Array.from(set)
+            .filter((name) => name != null)
+            .map((name) => this.get(name))
 
         const toLoad = clients.filter((c) => !c.loaded)
 

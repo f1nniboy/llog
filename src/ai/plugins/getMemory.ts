@@ -1,3 +1,4 @@
+import assert from "assert"
 import { Plugin, PluginResponse, PluginRunOptions } from "./index.js"
 import { AIMemoryEntry, MemoryTargetType } from "../memory.js"
 import { AIManager } from "../manager.js"
@@ -60,6 +61,8 @@ export default class GetMemoryPlugin extends Plugin<PluginInput, PluginOutput> {
                 limit: feat.settings.length,
             })
 
+            assert(data)
+
             memories.push(...data)
         }
 
@@ -75,6 +78,9 @@ export default class GetMemoryPlugin extends Plugin<PluginInput, PluginOutput> {
     }
 
     public check() {
-        return this.ai.app.config.feature("memory").enable
+        return (
+            this.ai.app.config.feature("memory").enable &&
+            this.ai.app.api.vector != undefined
+        )
     }
 }

@@ -1,3 +1,4 @@
+import assert from "assert"
 import { Plugin, PluginResponse, PluginRunOptions } from "./index.js"
 import { AIManager } from "../manager.js"
 
@@ -22,7 +23,9 @@ export default class SearchPlugin extends Plugin<PluginInput, PluginOutput> {
     public async run({
         data: { query },
     }: PluginRunOptions<PluginInput>): PluginResponse<PluginOutput> {
-        const { results } = await this.ai.app.api.search.searchQuery({
+        assert(this.ai.app.api.search)
+
+        const { results } = await this.ai.app.api.search?.searchQuery({
             query,
             limit: 5,
         })
@@ -30,5 +33,9 @@ export default class SearchPlugin extends Plugin<PluginInput, PluginOutput> {
         return {
             data: `Search results for '${query}':\n${results.map((r) => `${r.title}: ${r.description.map((d) => d.text).join(" / ")}`).join("\n")}`,
         }
+    }
+
+    public check() {
+        return this.ai.app.api.search != undefined
     }
 }

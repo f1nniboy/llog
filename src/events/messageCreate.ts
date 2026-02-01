@@ -95,6 +95,7 @@ export default class MessageCreateEvent extends Event<"messageCreate"> {
 
         if (this.app.config.data.blacklist?.users?.includes(message.author.id))
             return
+
         if (
             message.guild &&
             this.app.config.data.blacklist?.guilds?.includes(message.guild.id)

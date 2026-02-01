@@ -30,6 +30,9 @@ export default class UpdateUserPlugin extends Plugin<
                 "update",
                 "shut up",
                 "still",
+                "ban",
+                "kick",
+                "mod",
             ],
             parameters: {
                 name: { type: "string", required: true },

@@ -80,6 +80,11 @@ export class AIManager {
     public async classify({
         environment,
     }: AIClassifyOptions): Promise<ClassifyResult> {
+        if (!this.app.api.chat)
+            return {
+                continuation: false,
+            }
+
         const prompt = await Prompts.classify(this.app, environment)
 
         const result = await this.app.api.chat.runPrompt<
@@ -111,13 +116,13 @@ export class AIManager {
         const tools = this.plugin.asAPITools(plugins)
 
         /* First, try to generate a response to the given messages */
-        let result = await this.app.api.chat.runPrompt({
+        let result = await this.app.api.chat?.runPrompt({
             messages,
             tools: this.app.config.data.features.plugins ? tools : undefined,
             environment,
         })
 
-        assert(result.message)
+        assert(result?.message)
 
         const toolResults: PluginResultData[] = []
 
@@ -133,7 +138,7 @@ export class AIManager {
 
             /* After executing all requested plugins, send the results back to the AI to generate a response */
             if (toolResults.length > 0) {
-                result = await this.app.api.chat.runPrompt({
+                result = await this.app.api.chat?.runPrompt({
                     environment,
                     messages: [
                         ...messages,
@@ -142,7 +147,7 @@ export class AIManager {
                     ],
                 })
 
-                assert(result.message)
+                assert(result?.message)
             }
         }
 

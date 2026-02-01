@@ -11,12 +11,7 @@ import { SearchQueryData, SearchQueryOptions } from "./search.js"
 import { ChatRequest, ChatResult } from "./chat.js"
 import { App } from "../../app.js"
 
-export const APIClientTypes = [
-    "chat",
-    "vector",
-    "search",
-    "embeddings",
-] as const
+export const APIClientTypes = ["chat", "vector", "search"] as const
 export type APIClientType = (typeof APIClientTypes)[number]
 
 interface APIClientData<T extends APIClientSettings> {
@@ -38,8 +33,9 @@ export interface APIClientValidateOptions<T> {
     ctx: z.core.$RefinementCtx
 }
 
-export type SpecificAPIClient<T extends keyof APIClient> = APIClient &
-    Required<Pick<APIClient, T>>
+export type SpecificAPIClient<T extends keyof APIClient> =
+    | (APIClient & Required<Pick<APIClient, T>>)
+    | null
 
 export interface APIClient {
     runPrompt?<T>(options: ChatRequest): Promise<ChatResult<T>>

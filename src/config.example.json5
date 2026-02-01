@@ -6,12 +6,6 @@
 
     api: {
         settings: {
-            llamacpp: {
-                models: {
-                    chat: "hf:giladgd/gpt-oss-20b-GGUF/gpt-oss-20b.MXFP4.gguf",
-                    embeddings: "hf:CompendiumLabs/bge-small-en-v1.5-gguf/bge-small-en-v1.5-f16.gguf"
-                }
-            },
             openrouter: {
                 key: "sk-or-v1-...",
                 model: "google/gemini-3-pro-preview"
@@ -23,9 +17,6 @@
                     embed: "llama-text-embed-v2"
                 }
             },
-            "vectra": {
-                path: "./index"
-            },
             "4get": {
                 url: "https://search.oss.zone"
             }
@@ -34,8 +25,7 @@
         clients: {
             chat: "openrouter",
             vector: "pinecone",
-            search: "4get",
-            embeddings: "pinecone"
+            search: "4get"
         }
     },
 

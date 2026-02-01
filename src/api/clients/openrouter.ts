@@ -6,11 +6,11 @@ import { inspect } from "util"
 import assert from "assert"
 import z from "zod"
 import {
-    generateObject,
     generateText,
     jsonSchema,
     JSONValue,
     ModelMessage,
+    Output,
     TextPart,
     tool,
     ToolSet,
@@ -136,14 +136,16 @@ export default class OpenRouterChatClient extends APIClient<SettingsType> {
         })
 
         if (schema) {
-            const result = await generateObject({
+            const result = await generateText({
                 model,
                 messages: rawMessages,
-                schema,
+                output: Output.object({
+                    schema,
+                }),
             })
 
             return {
-                object: result.object,
+                object: result.output,
             }
         } else {
             this.app.logger.debug(
